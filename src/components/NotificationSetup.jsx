@@ -41,14 +41,22 @@ export default function NotificationSetup() {
     setStep('ask-permission');
   }, [socio]);
 
+  const [enabling, setEnabling] = useState(false);
+  const [debugMsg, setDebugMsg] = useState('');
+
   const handleEnable = async () => {
-    const result = await initPush(socio.id);
+    setEnabling(true);
+    setDebugMsg('Richiesta permesso...');
+    const result = await initPush(socio.id, setDebugMsg);
+    setEnabling(false);
     if (result === 'granted') {
       localStorage.setItem('push-setup-done', '1');
       setStep('done');
       setTimeout(() => setStep(null), 2500);
     } else if (result === 'denied') {
       setStep('denied');
+    } else {
+      setDebugMsg('Errore: ' + result);
     }
   };
 
@@ -127,12 +135,15 @@ export default function NotificationSetup() {
             </div>
             <button onClick={dismiss} className="text-slate-400 hover:text-slate-600 shrink-0"><X size={16} /></button>
           </div>
+          {debugMsg ? (
+            <p className="mt-2 text-xs text-slate-400 text-center">{debugMsg}</p>
+          ) : null}
           <div className="flex gap-2 mt-3">
             <button onClick={dismiss} className="flex-1 py-2 rounded-xl border border-slate-200 text-xs text-slate-500 hover:bg-slate-50 font-medium">
               Non ora
             </button>
-            <button onClick={handleEnable} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-xs font-medium hover:opacity-90">
-              Attiva notifiche
+            <button onClick={handleEnable} disabled={enabling} className="flex-1 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-xs font-medium hover:opacity-90 disabled:opacity-60">
+              {enabling ? 'Attivazione...' : 'Attiva notifiche'}
             </button>
           </div>
         </div>
