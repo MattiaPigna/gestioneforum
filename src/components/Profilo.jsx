@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Loader2, Mail, Calendar, Shield, CheckCircle, Clock, Circle, LogOut, Download } from 'lucide-react';
+import { Loader2, Mail, Calendar, Shield, CheckCircle, Clock, Circle, LogOut, Download, Bell } from 'lucide-react';
 import { exportSociCSV } from '../utils/export';
 
 const statoConfig = {
@@ -19,6 +19,23 @@ export default function Profilo() {
   const { socio, logout } = useAuth();
   const [myTasks, setMyTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [testResult, setTestResult] = useState('');
+  const [testing, setTesting] = useState(false);
+
+  const testPush = async () => {
+    setTesting(true);
+    setTestResult('Invio...');
+    try {
+      const { data, error } = await supabase.functions.invoke('send-push', {
+        body: { title: '🔔 Test notifica', body: 'Funziona!', url: '/', assegnatario: socio.nome },
+      });
+      if (error) setTestResult('Errore Edge Function: ' + JSON.stringify(error));
+      else setTestResult('Risposta: ' + JSON.stringify(data));
+    } catch (e) {
+      setTestResult('Eccezione: ' + e.message);
+    }
+    setTesting(false);
+  };
 
   useEffect(() => {
     if (!socio) { setLoading(false); return; }
@@ -71,10 +88,20 @@ export default function Profilo() {
               </div>
             </div>
           </div>
-          <button onClick={logout} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 text-sm font-medium transition-colors">
-            <LogOut size={14} /> Esci
-          </button>
+          <div className="flex gap-2">
+            <button onClick={testPush} disabled={testing} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-500 hover:bg-blue-50 text-sm font-medium transition-colors disabled:opacity-60">
+              <Bell size={14} /> {testing ? 'Invio...' : 'Test notifica'}
+            </button>
+            <button onClick={logout} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 text-sm font-medium transition-colors">
+              <LogOut size={14} /> Esci
+            </button>
+          </div>
         </div>
+        {testResult && (
+          <div className="mt-3 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 font-mono break-all">
+            {testResult}
+          </div>
+        )}
       </div>
 
       {/* Stats personali */}
