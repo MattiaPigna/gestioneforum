@@ -118,6 +118,7 @@ function AppInner() {
       case 'finanze':     return <Finanze />;
       case 'statistiche': return <Statistiche />;
       case 'profilo':     return <Profilo />;
+      case 'ruoli':       return <GestioneRuoli />;
       default:            return <Dashboard onNavigate={setActiveSection} />;
     }
   };
