@@ -4,20 +4,23 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportSociCSV, exportSociPDF } from '../utils/export';
 
-const ruoloColor = {
-  'Presidente': 'bg-blue-100 text-blue-700',
-  'Vice Presidente': 'bg-teal-100 text-teal-700',
-  'Segretario': 'bg-violet-100 text-violet-700',
-  'Tesoriere': 'bg-amber-100 text-amber-700',
-  'Referente Progetti': 'bg-orange-100 text-orange-700',
-  'Membro': 'bg-slate-100 text-slate-600',
+const colorMap = {
+  slate:   'bg-slate-100 text-slate-700',
+  blue:    'bg-blue-100 text-blue-700',
+  teal:    'bg-teal-100 text-teal-700',
+  violet:  'bg-violet-100 text-violet-700',
+  amber:   'bg-amber-100 text-amber-700',
+  orange:  'bg-orange-100 text-orange-700',
+  rose:    'bg-rose-100 text-rose-700',
+  emerald: 'bg-emerald-100 text-emerald-700',
 };
 
-const emptyForm = { nome: '', ruolo: 'Membro', email: '', iscrizione: '' };
+const emptyForm = { nome: '', ruolo: '', email: '', iscrizione: '' };
 
 export default function Soci() {
   const { canEdit } = useAuth();
   const [soci, setSoci] = useState([]);
+  const [ruoliDB, setRuoliDB] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
@@ -28,7 +31,7 @@ export default function Soci() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => { fetchSoci(); }, []);
+  useEffect(() => { Promise.all([fetchSoci(), fetchRuoli()]); }, []);
 
   const fetchSoci = async () => {
     setLoading(true);
@@ -38,7 +41,17 @@ export default function Soci() {
     setLoading(false);
   };
 
-  const openAdd = () => { setEditSocio(null); setForm(emptyForm); setShowForm(true); };
+  const fetchRuoli = async () => {
+    const { data } = await supabase.from('ruoli').select('id, nome, colore').order('nome');
+    if (data) setRuoliDB(data);
+  };
+
+  const getRuoloColor = (nomeRuolo) => {
+    const ruolo = ruoliDB.find(r => r.nome === nomeRuolo);
+    return colorMap[ruolo?.colore] || colorMap.slate;
+  };
+
+  const openAdd = () => { setEditSocio(null); setForm({ ...emptyForm, ruolo: ruoliDB[0]?.nome || '' }); setShowForm(true); };
   const openEdit = (socio) => { setEditSocio(socio); setForm({ nome: socio.nome, ruolo: socio.ruolo, email: socio.email || '', iscrizione: socio.iscrizione || '' }); setShowForm(true); };
 
   const handleSave = async () => {
@@ -76,7 +89,7 @@ export default function Soci() {
     else alert('Errore: ' + error.message);
   };
 
-  const ruoli = ['tutti', ...new Set(soci.map(s => s.ruolo))];
+  const ruoli = ['tutti', ...ruoliDB.map(r => r.nome)];
 
   const handleSort = (col) => {
     setSort(prev => prev.col === col ? { col, dir: prev.dir === 'asc' ? 'desc' : 'asc' } : { col, dir: 'asc' });
@@ -163,7 +176,7 @@ export default function Soci() {
               <div>
                 <label className="text-xs font-medium text-slate-600 block mb-1">Ruolo</label>
                 <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.ruolo} onChange={e => setForm(f => ({ ...f, ruolo: e.target.value }))}>
-                  {Object.keys(ruoloColor).map(r => <option key={r}>{r}</option>)}
+                  {ruoliDB.map(r => <option key={r.id} value={r.nome}>{r.nome}</option>)}
                 </select>
               </div>
               <div>
@@ -238,7 +251,7 @@ export default function Soci() {
                     </div>
                   </td>
                   <td className="px-4 py-3.5">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ruoloColor[socio.ruolo] || ruoloColor['Membro']}`}>{socio.ruolo}</span>
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getRuoloColor(socio.ruolo)}`}>{socio.ruolo}</span>
                   </td>
                   <td className="px-4 py-3.5">
                     {socio.email
