@@ -14,9 +14,13 @@ const tipoConfig = {
 const mesi = ['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 const giorni = ['Lun','Mar','Mer','Gio','Ven','Sab','Dom'];
 
+const prioritaDot = { Alta: 'bg-rose-500', Media: 'bg-amber-400', Bassa: 'bg-emerald-500' };
+const prioritaColor = { Alta: 'bg-rose-100 text-rose-700 border-rose-200', Media: 'bg-amber-100 text-amber-700 border-amber-200', Bassa: 'bg-emerald-100 text-emerald-700 border-emerald-200' };
+
 export default function Calendario() {
   const { canEdit } = useAuth();
   const [eventi, setEventi] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -24,12 +28,19 @@ export default function Calendario() {
   const [meseCorrente, setMeseCorrente] = useState(new Date());
   const [form, setForm] = useState({ titolo: '', descrizione: '', data: '', ora: '', tipo: 'evento', luogo: '' });
 
-  useEffect(() => { fetchEventi(); }, []);
+  useEffect(() => {
+    Promise.all([fetchEventi(), fetchTasks()]);
+  }, []);
 
   const fetchEventi = async () => {
     const { data } = await supabase.from('eventi').select('*').order('data');
     if (data) setEventi(data);
     setLoading(false);
+  };
+
+  const fetchTasks = async () => {
+    const { data } = await supabase.from('tasks').select('id, titolo, scadenza, priorita, stato').not('scadenza', 'is', null);
+    if (data) setTasks(data);
   };
 
   const handleAdd = async () => {
@@ -70,7 +81,13 @@ export default function Calendario() {
     return eventi.filter(e => e.data === d);
   };
 
+  const taskDelGiorno = (data) => {
+    const d = data.toISOString().split('T')[0];
+    return tasks.filter(t => t.scadenza === d && t.stato !== 'Done');
+  };
+
   const prossimiEventi = eventi.filter(e => new Date(e.data) >= oggi).slice(0, 5);
+  const prossimiTask = tasks.filter(t => t.scadenza && new Date(t.scadenza) >= oggi && t.stato !== 'Done').sort((a, b) => a.scadenza.localeCompare(b.scadenza)).slice(0, 5);
 
   if (loading) return (
     <div className="flex items-center justify-center py-32 text-slate-400">
@@ -158,6 +175,7 @@ export default function Calendario() {
               const isCurrentMonth = data.getMonth() === mese;
               const isToday = data.toDateString() === oggi.toDateString();
               const eventiDay = eventiDelGiorno(data);
+              const tasksDay = taskDelGiorno(data);
               return (
                 <div key={i} className={`min-h-12 p-1 rounded-lg text-xs ${isCurrentMonth ? 'bg-white' : 'bg-slate-50/50'} ${isToday ? 'ring-2 ring-blue-400' : ''}`}>
                   <span className={`block text-center w-6 h-6 rounded-full flex items-center justify-center mx-auto font-medium
@@ -168,6 +186,9 @@ export default function Calendario() {
                     {eventiDay.slice(0, 2).map(ev => (
                       <div key={ev.id} className={`w-full h-1.5 rounded-full ${tipoConfig[ev.tipo]?.dot || 'bg-slate-400'}`} title={ev.titolo} />
                     ))}
+                    {tasksDay.slice(0, 2).map(t => (
+                      <div key={t.id} className={`w-full h-1.5 rounded-full opacity-70 ${prioritaDot[t.priorita] || 'bg-slate-400'}`} title={`Task: ${t.titolo}`} />
+                    ))}
                   </div>
                 </div>
               );
@@ -175,34 +196,58 @@ export default function Calendario() {
           </div>
         </div>
 
-        {/* Prossimi eventi */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex flex-col">
-          <h3 className="font-semibold text-slate-800 mb-4">Prossimi Eventi</h3>
-          <div className="space-y-3 flex-1">
-            {prossimiEventi.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-8">Nessun evento in programma</p>
-            ) : prossimiEventi.map(ev => {
-              const cfg = tipoConfig[ev.tipo] || tipoConfig.altro;
-              return (
-                <div key={ev.id} className="group flex gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className={`w-1 rounded-full ${cfg.dot} shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{ev.titolo}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium border ${cfg.color}`}>{ev.tipo}</span>
-                      <span className="text-xs text-slate-400 flex items-center gap-1"><Calendar size={10}/>{ev.data}</span>
-                      {ev.ora && <span className="text-xs text-slate-400 flex items-center gap-1"><Clock size={10}/>{ev.ora.slice(0,5)}</span>}
-                      {ev.luogo && <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin size={10}/>{ev.luogo}</span>}
+        {/* Pannello laterale */}
+        <div className="space-y-4 flex flex-col">
+          {/* Prossimi eventi */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <h3 className="font-semibold text-slate-800 mb-4">Prossimi Eventi</h3>
+            <div className="space-y-3">
+              {prossimiEventi.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">Nessun evento in programma</p>
+              ) : prossimiEventi.map(ev => {
+                const cfg = tipoConfig[ev.tipo] || tipoConfig.altro;
+                return (
+                  <div key={ev.id} className="group flex gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                    <div className={`w-1 rounded-full ${cfg.dot} shrink-0`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{ev.titolo}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className={`text-xs px-1.5 py-0.5 rounded-md font-medium border ${cfg.color}`}>{ev.tipo}</span>
+                        <span className="text-xs text-slate-400 flex items-center gap-1"><Calendar size={10}/>{ev.data}</span>
+                        {ev.ora && <span className="text-xs text-slate-400 flex items-center gap-1"><Clock size={10}/>{ev.ora.slice(0,5)}</span>}
+                        {ev.luogo && <span className="text-xs text-slate-400 flex items-center gap-1"><MapPin size={10}/>{ev.luogo}</span>}
+                      </div>
                     </div>
+                    {canEdit() && (
+                      <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all shrink-0">
+                        <Trash2 size={14} />
+                      </button>
+                    )}
                   </div>
-                  {canEdit() && (
-                    <button onClick={() => handleDelete(ev.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all shrink-0">
-                      <Trash2 size={14} />
-                    </button>
-                  )}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Task in scadenza */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <h3 className="font-semibold text-slate-800 mb-4">Task in scadenza</h3>
+            <div className="space-y-2">
+              {prossimiTask.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">Nessun task in scadenza</p>
+              ) : prossimiTask.map(t => (
+                <div key={t.id} className="flex gap-3 items-center p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${prioritaDot[t.priorita] || 'bg-slate-400'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-700 truncate">{t.titolo}</p>
+                    <p className="text-xs text-slate-400">{t.scadenza}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium border shrink-0 ${prioritaColor[t.priorita] || 'bg-slate-100 text-slate-600'}`}>
+                    {t.priorita}
+                  </span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -215,13 +215,6 @@ export default function Tasks() {
                 <label className="text-xs font-medium text-slate-600 block mb-1">Scadenza</label>
                 <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.scadenza} onChange={e => setForm(f => ({ ...f, scadenza: e.target.value }))} />
               </div>
-              <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Collega a evento calendario</label>
-                <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.evento_id} onChange={e => setForm(f => ({ ...f, evento_id: e.target.value }))}>
-                  <option value="">— Nessun evento —</option>
-                  {eventi.map(ev => <option key={ev.id} value={ev.id}>{ev.titolo} ({ev.data})</option>)}
-                </select>
-              </div>
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Annulla</button>
