@@ -31,13 +31,14 @@ const emptyForm = { nome: '', colore: 'slate', permessi: { ...defaultPermessi } 
 
 export default function GestioneRuoli() {
   const [ruoli, setRuoli] = useState([]);
+  const [soci, setSoci] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState('');
   const [isNew, setIsNew] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => { fetchRuoli(); }, []);
+  useEffect(() => { Promise.all([fetchRuoli(), fetchSoci()]); }, []);
 
   const fetchRuoli = async () => {
     const { data } = await supabase.from('ruoli').select('*').order('created_at');
@@ -46,6 +47,11 @@ export default function GestioneRuoli() {
       if (data.length > 0) selectRuolo(data[0]);
     }
     setLoading(false);
+  };
+
+  const fetchSoci = async () => {
+    const { data } = await supabase.from('soci').select('id, nome, ruolo, avatar').eq('attivo', true).order('nome');
+    if (data) setSoci(data);
   };
 
   const selectRuolo = (ruolo) => {
@@ -206,6 +212,32 @@ export default function GestioneRuoli() {
                 ))}
               </div>
             </div>
+
+            {/* Soci con questo ruolo */}
+            {!isNew && (() => {
+              const sociRuolo = soci.filter(s => s.ruolo === form.nome);
+              return (
+                <div>
+                  <label className="text-xs font-medium text-slate-600 block mb-2">
+                    Soci con questo ruolo ({sociRuolo.length})
+                  </label>
+                  {sociRuolo.length === 0 ? (
+                    <p className="text-sm text-slate-400 bg-slate-50 rounded-xl p-3">Nessun socio assegnato</p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 bg-slate-50 rounded-xl p-3">
+                      {sociRuolo.map(s => (
+                        <div key={s.id} className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-3 py-1">
+                          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                            <span className="text-white text-[8px] font-bold">{s.avatar || s.nome?.split(' ').map(n => n[0]).join('')}</span>
+                          </div>
+                          <span className="text-xs font-medium text-slate-700">{s.nome}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             <div className="flex gap-3 pt-2">
               {!isNew && (
