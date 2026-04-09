@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, Plus, X, ChevronDown, ChevronUp, Send, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { sendPush } from '../lib/push';
 
 function PropostaCard({ proposta, onVote, onDelete }) {
   const { socio } = useAuth();
@@ -173,6 +174,11 @@ export default function Proposte() {
       setProposte(prev => [{ ...data, userVote: null }, ...prev]);
       setForm({ titolo: '', descrizione: '' });
       setShowForm(false);
+      sendPush({
+        title: '💡 Nuova proposta: ' + data.titolo,
+        body: `Proposta di ${data.autore} — vota ora!`,
+        url: '/',
+      });
     }
     setSaving(false);
   };

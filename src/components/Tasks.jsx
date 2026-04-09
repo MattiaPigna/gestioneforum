@@ -3,6 +3,7 @@ import { Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2, Loader2, Down
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportTasksCSV, exportTasksPDF } from '../utils/export';
+import { sendPush } from '../lib/push';
 
 const prioritaConfig = {
   Alta:  { color: 'bg-rose-100 text-rose-600 border-rose-200',    border: 'border-l-rose-500' },
@@ -132,7 +133,18 @@ export default function Tasks() {
     } else {
       const { data, error } = await supabase.from('tasks').insert([payload]).select().single();
       if (error) alert('Errore: ' + error.message);
-      else setTasks(prev => [data, ...prev]);
+      else {
+        setTasks(prev => [data, ...prev]);
+        // Notifica: solo all'assegnatario oppure a tutti se non assegnato
+        sendPush({
+          title: '📋 Nuovo task: ' + payload.titolo,
+          body: payload.assegnatario
+            ? `Assegnato a ${payload.assegnatario}` + (payload.scadenza ? ` · Scadenza: ${payload.scadenza}` : '')
+            : 'Nessun assegnatario — task per tutti',
+          url: '/',
+          assegnatario: payload.assegnatario || null,
+        });
+      }
     }
     setShowForm(false);
     setSaving(false);

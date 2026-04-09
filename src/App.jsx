@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Menu, Bell, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Menu, Bell, X, BellOff } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { initPush, getPushPermissionState } from './lib/push';
 import Login from './components/Login';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -93,10 +94,37 @@ function NotifichePanel({ open, onClose }) {
 }
 
 function AppInner() {
-  const { user, loading, isPresidente } = useAuth();
+  const { user, loading, isPresidente, socio } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [pushRevoked, setPushRevoked] = useState(false);
+  const pushInitialized = useRef(false);
+
+  // Inizializza push al primo login
+  useEffect(() => {
+    if (!socio || pushInitialized.current) return;
+    pushInitialized.current = true;
+
+    const state = getPushPermissionState();
+    if (state === 'denied') {
+      setPushRevoked(true);
+      return;
+    }
+    initPush(socio.id).then((result) => {
+      if (result === 'denied') setPushRevoked(true);
+    });
+  }, [socio]);
+
+  // Controlla periodicamente se il permesso è stato revocato
+  useEffect(() => {
+    if (!socio) return;
+    const interval = setInterval(() => {
+      const state = getPushPermissionState();
+      setPushRevoked(state === 'denied');
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [socio]);
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -150,6 +178,14 @@ function AppInner() {
             </div>
           </div>
         </header>
+        {pushRevoked && (
+          <div className="bg-rose-50 border-b border-rose-200 px-6 py-2.5 flex items-center gap-3">
+            <BellOff size={16} className="text-rose-500 shrink-0" />
+            <p className="text-sm text-rose-700 flex-1">
+              Le notifiche push sono disabilitate. Riattivarle dalle impostazioni del browser per ricevere aggiornamenti.
+            </p>
+          </div>
+        )}
         <main className="flex-1 overflow-y-auto p-6">
           {renderSection()}
         </main>

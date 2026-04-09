@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, X, Loader2, Trash2, Calendar, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { sendPush } from '../lib/push';
 
 const tipoConfig = {
   riunione:  { color: 'bg-blue-100 text-blue-700 border-blue-200',   dot: 'bg-blue-500' },
@@ -51,7 +52,16 @@ export default function Calendario() {
       data: form.data, ora: form.ora || null,
       tipo: form.tipo, luogo: form.luogo,
     }]).select().single();
-    if (!error) { setEventi(prev => [...prev, data].sort((a,b) => a.data.localeCompare(b.data))); setForm({ titolo: '', descrizione: '', data: '', ora: '', tipo: 'evento', luogo: '' }); setShowForm(false); }
+    if (!error) {
+      setEventi(prev => [...prev, data].sort((a, b) => a.data.localeCompare(b.data)));
+      setForm({ titolo: '', descrizione: '', data: '', ora: '', tipo: 'evento', luogo: '' });
+      setShowForm(false);
+      sendPush({
+        title: '📅 Nuovo evento: ' + data.titolo,
+        body: data.data + (data.ora ? ` alle ${data.ora}` : '') + (data.luogo ? ` · ${data.luogo}` : ''),
+        url: '/',
+      });
+    }
     setSaving(false);
   };
 
