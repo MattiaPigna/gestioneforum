@@ -67,6 +67,12 @@ export function getPushPermissionState() {
 
 // assegnatario: nome socio (string) → solo a lui | null → a tutti
 export async function sendPush({ title, body, url = '/', assegnatario = null }) {
+  // Salva nella tabella notifiche (campanella in-app) — indipendente dalla push
+  supabase.from('notifiche').insert([{ titolo: title, corpo: body, url }]).then(({ error }) => {
+    if (error) console.warn('[notifiche] insert error:', error.message);
+  });
+
+  // Invia push tramite Edge Function
   try {
     await supabase.functions.invoke('send-push', {
       body: { title, body, url, assegnatario },

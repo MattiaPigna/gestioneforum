@@ -127,9 +127,21 @@ export default function Tasks() {
       evento_id: form.evento_id || null,
     };
     if (editId) {
+      const taskPrima = tasks.find(t => t.id === editId);
       const { data, error } = await supabase.from('tasks').update(payload).eq('id', editId).select().single();
       if (error) alert('Errore: ' + error.message);
-      else setTasks(prev => prev.map(t => t.id === editId ? data : t));
+      else {
+        setTasks(prev => prev.map(t => t.id === editId ? data : t));
+        // Notifica completamento (solo quando passa a Done)
+        if (payload.stato === 'Done' && taskPrima?.stato !== 'Done') {
+          sendPush({
+            title: '✅ Task completato: ' + payload.titolo,
+            body: payload.assegnatario ? `Completato da ${payload.assegnatario}` : 'Task completato',
+            url: '/',
+            assegnatario: null,
+          });
+        }
+      }
     } else {
       const { data, error } = await supabase.from('tasks').insert([payload]).select().single();
       if (error) alert('Errore: ' + error.message);
