@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2, Loader2, Download, FileText, Pencil, Save } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2, Loader2, Download, FileText, Pencil, Save, Ban, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportTasksCSV, exportTasksPDF } from '../utils/export';
@@ -12,28 +12,68 @@ const prioritaConfig = {
 };
 
 const statoConfig = {
-  'To Do':       { icon: Circle,       headerBg: 'bg-slate-50',  headerBorder: 'border-slate-200', iconColor: 'text-slate-400' },
-  'In Progress': { icon: Clock,        headerBg: 'bg-blue-50',   headerBorder: 'border-blue-200',  iconColor: 'text-blue-500' },
-  'Done':        { icon: CheckCircle,  headerBg: 'bg-teal-50',   headerBorder: 'border-teal-200',  iconColor: 'text-teal-500' },
+  'To Do':       { icon: Circle,      headerBg: 'bg-slate-50',  headerBorder: 'border-slate-200', iconColor: 'text-slate-400',  badge: 'bg-slate-100 text-slate-600' },
+  'In Progress': { icon: Clock,       headerBg: 'bg-blue-50',   headerBorder: 'border-blue-200',  iconColor: 'text-blue-500',   badge: 'bg-blue-100 text-blue-600' },
+  'Done':        { icon: CheckCircle, headerBg: 'bg-teal-50',   headerBorder: 'border-teal-200',  iconColor: 'text-teal-500',   badge: 'bg-teal-100 text-teal-600' },
+  'Annullata':   { icon: Ban,         headerBg: 'bg-rose-50',   headerBorder: 'border-rose-200',  iconColor: 'text-rose-400',   badge: 'bg-rose-100 text-rose-500' },
 };
 
-const colonne = ['To Do', 'In Progress', 'Done'];
+const colonne = ['To Do', 'In Progress', 'Done', 'Annullata'];
 const emptyForm = { titolo: '', descrizione: '', priorita: 'Media', stato: 'To Do', assegnatario: '', scadenza: '', evento_id: '' };
 
-function TaskCard({ task, eventi, onDelete, onEdit, onComplete }) {
+function StatusMenu({ task, onChangeStato }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const cfg = statoConfig[task.stato] || statoConfig['To Do'];
+  const Icon = cfg.icon;
+
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${cfg.badge} transition-all`}
+      >
+        <Icon size={10} />
+        {task.stato}
+        <ChevronDown size={9} className="opacity-60" />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 z-20 overflow-hidden min-w-[130px]">
+          {Object.entries(statoConfig).map(([stato, s]) => {
+            const I = s.icon;
+            return (
+              <button
+                key={stato}
+                onClick={() => { onChangeStato(task, stato); setOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition-colors ${task.stato === stato ? 'opacity-40 cursor-default' : ''}`}
+              >
+                <I size={12} className={s.iconColor} />
+                {stato}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TaskCard({ task, eventi, onDelete, onEdit, onChangeStato }) {
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const eventoCollegato = eventi.find(e => e.id === task.evento_id);
   const isDone = task.stato === 'Done';
+  const isAnnullata = task.stato === 'Annullata';
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all group`}>
+    <div className={`bg-white rounded-xl p-4 shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all group ${isAnnullata ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-2">
-        <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
+        <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-          {!isDone && onComplete && (
-            <button onClick={() => onComplete(task)} className="text-slate-300 hover:text-teal-500 transition-colors" title="Segna come completato">
-              <CheckCircle size={13} />
-            </button>
-          )}
           <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors">
             <Pencil size={13} />
           </button>
@@ -44,7 +84,7 @@ function TaskCard({ task, eventi, onDelete, onEdit, onComplete }) {
       </div>
       {task.descrizione && <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{task.descrizione}</p>}
       <div className="flex items-center justify-between mt-3">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+        <StatusMenu task={task} onChangeStato={onChangeStato} />
         {task.assegnatario && (
           <div className="flex items-center gap-1">
             <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
@@ -54,12 +94,15 @@ function TaskCard({ task, eventi, onDelete, onEdit, onComplete }) {
           </div>
         )}
       </div>
-      {task.scadenza && (
-        <div className="flex items-center gap-1 mt-2">
-          <Clock size={10} className="text-slate-400" />
-          <span className="text-xs text-slate-400">{task.scadenza}</span>
-        </div>
-      )}
+      <div className="flex items-center gap-3 mt-2">
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+        {task.scadenza && (
+          <div className="flex items-center gap-1">
+            <Clock size={10} className="text-slate-400" />
+            <span className="text-xs text-slate-400">{task.scadenza}</span>
+          </div>
+        )}
+      </div>
       {eventoCollegato && (
         <div className="mt-2 flex items-center gap-1 bg-blue-50 rounded-lg px-2 py-1">
           <span className="text-[10px] text-blue-600 font-medium">📅 {eventoCollegato.titolo}</span>
@@ -174,17 +217,20 @@ export default function Tasks() {
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 
-  const handleComplete = async (task) => {
+  const handleChangeStato = async (task, nuovoStato) => {
+    if (task.stato === nuovoStato) return;
     const { data, error } = await supabase
-      .from('tasks').update({ stato: 'Done' }).eq('id', task.id).select().single();
+      .from('tasks').update({ stato: nuovoStato }).eq('id', task.id).select().single();
     if (error) { alert('Errore: ' + error.message); return; }
     setTasks(prev => prev.map(t => t.id === task.id ? data : t));
-    sendPush({
-      title: '✅ Task completato: ' + task.titolo,
-      body: task.assegnatario ? `Completato da ${task.assegnatario}` : 'Task completato',
-      url: '/',
-      assegnatario: null,
-    });
+    if (nuovoStato === 'Done') {
+      sendPush({
+        title: '✅ Task completato: ' + task.titolo,
+        body: task.assegnatario ? `Completato da ${task.assegnatario}` : 'Task completato',
+        url: '/',
+        assegnatario: null,
+      });
+    }
   };
 
   if (loading) return (
@@ -284,7 +330,7 @@ export default function Tasks() {
               </div>
               <div className="p-3 space-y-3 min-h-32 bg-slate-50/50">
                 {colTasks.map(task => (
-                  <TaskCard key={task.id} task={task} eventi={eventi} onDelete={handleDelete} onEdit={canEdit() ? openEdit : () => {}} onComplete={canEdit() ? handleComplete : null} />
+                  <TaskCard key={task.id} task={task} eventi={eventi} onDelete={handleDelete} onEdit={canEdit() ? openEdit : () => {}} onChangeStato={canEdit() ? handleChangeStato : null} />
                 ))}
                 {colTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 text-slate-400">
