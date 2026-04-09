@@ -50,9 +50,6 @@ serve(async (req) => {
       subscriptions = data ?? []
     }
 
-    // Salva sempre la notifica in tabella (visibile nella campanella in-app)
-    await supabase.from('notifiche').insert([{ titolo: title, corpo: pushbody, url }])
-
     if (subscriptions.length === 0) {
       return new Response(
         JSON.stringify({ sent: 0, info: 'Nessuna subscription trovata' }),

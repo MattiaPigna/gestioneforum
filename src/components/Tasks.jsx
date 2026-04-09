@@ -20,14 +20,20 @@ const statoConfig = {
 const colonne = ['To Do', 'In Progress', 'Done'];
 const emptyForm = { titolo: '', descrizione: '', priorita: 'Media', stato: 'To Do', assegnatario: '', scadenza: '', evento_id: '' };
 
-function TaskCard({ task, eventi, onDelete, onEdit }) {
+function TaskCard({ task, eventi, onDelete, onEdit, onComplete }) {
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const eventoCollegato = eventi.find(e => e.id === task.evento_id);
+  const isDone = task.stato === 'Done';
   return (
     <div className={`bg-white rounded-xl p-4 shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all group`}>
       <div className="flex items-start justify-between gap-2">
-        <h4 className="text-sm font-semibold text-slate-800 leading-snug flex-1">{task.titolo}</h4>
+        <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
+          {!isDone && onComplete && (
+            <button onClick={() => onComplete(task)} className="text-slate-300 hover:text-teal-500 transition-colors" title="Segna come completato">
+              <CheckCircle size={13} />
+            </button>
+          )}
           <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors">
             <Pencil size={13} />
           </button>
@@ -168,6 +174,19 @@ export default function Tasks() {
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 
+  const handleComplete = async (task) => {
+    const { data, error } = await supabase
+      .from('tasks').update({ stato: 'Done' }).eq('id', task.id).select().single();
+    if (error) { alert('Errore: ' + error.message); return; }
+    setTasks(prev => prev.map(t => t.id === task.id ? data : t));
+    sendPush({
+      title: '✅ Task completato: ' + task.titolo,
+      body: task.assegnatario ? `Completato da ${task.assegnatario}` : 'Task completato',
+      url: '/',
+      assegnatario: null,
+    });
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-32 text-slate-400">
       <Loader2 size={24} className="animate-spin mr-2" /> Caricamento task...
@@ -265,7 +284,7 @@ export default function Tasks() {
               </div>
               <div className="p-3 space-y-3 min-h-32 bg-slate-50/50">
                 {colTasks.map(task => (
-                  <TaskCard key={task.id} task={task} eventi={eventi} onDelete={handleDelete} onEdit={canEdit() ? openEdit : () => {}} />
+                  <TaskCard key={task.id} task={task} eventi={eventi} onDelete={handleDelete} onEdit={canEdit() ? openEdit : () => {}} onComplete={canEdit() ? handleComplete : null} />
                 ))}
                 {colTasks.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 text-slate-400">
