@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle, Plus, X, ChevronDown, ChevronUp, Send, Loader2, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../context/AuthContext';
 
 function PropostaCard({ proposta, onVote, onDelete }) {
+  const { socio } = useAuth();
+  const nomeUtente = socio?.nome || 'Anonimo';
   const [expanded, setExpanded] = useState(false);
   const [commenti, setCommenti] = useState([]);
   const [commentText, setCommentText] = useState('');
@@ -22,7 +25,7 @@ function PropostaCard({ proposta, onVote, onDelete }) {
     if (!commentText.trim()) return;
     const { data, error } = await supabase.from('commenti').insert([{
       proposta_id: proposta.id,
-      autore: 'Mattia Rossi',
+      autore: nomeUtente,
       testo: commentText,
     }]).select().single();
     if (!error) {
@@ -122,6 +125,8 @@ function PropostaCard({ proposta, onVote, onDelete }) {
 }
 
 export default function Proposte() {
+  const { socio } = useAuth();
+  const nomeUtente = socio?.nome || 'Anonimo';
   const [proposte, setProposte] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -160,7 +165,7 @@ export default function Proposte() {
     const { data, error } = await supabase.from('proposte').insert([{
       titolo: form.titolo,
       descrizione: form.descrizione,
-      autore: 'Mattia Rossi',
+      autore: nomeUtente,
       upvotes: 0,
       downvotes: 0,
     }]).select().single();
