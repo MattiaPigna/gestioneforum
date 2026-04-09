@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, X, Loader2, Trash2, Calendar, Clock, MapPin, Tag } from 'lucide-react';
+import { Plus, X, Loader2, Trash2, Calendar, Clock, MapPin, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 
@@ -83,11 +83,26 @@ export default function Calendario() {
 
   const taskDelGiorno = (data) => {
     const d = data.toISOString().split('T')[0];
-    return tasks.filter(t => t.scadenza === d && t.stato !== 'Done');
+    return tasks.filter(t => t.scadenza === d);
+  };
+
+  const completeTask = async (id) => {
+    await supabase.from('tasks').update({ stato: 'Done' }).eq('id', id);
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, stato: 'Done' } : t));
+  };
+
+  const removeTask = async (id) => {
+    if (!confirm('Rimuovere questo task dal calendario?')) return;
+    await supabase.from('tasks').delete().eq('id', id);
+    setTasks(prev => prev.filter(t => t.id !== id));
   };
 
   const prossimiEventi = eventi.filter(e => new Date(e.data) >= oggi).slice(0, 5);
-  const prossimiTask = tasks.filter(t => t.scadenza && new Date(t.scadenza) >= oggi && t.stato !== 'Done').sort((a, b) => a.scadenza.localeCompare(b.scadenza)).slice(0, 5);
+  const oggi_str = oggi.toISOString().split('T')[0];
+  const taskCalendario = tasks
+    .filter(t => t.scadenza)
+    .sort((a, b) => a.scadenza.localeCompare(b.scadenza))
+    .slice(0, 8);
 
   if (loading) return (
     <div className="flex items-center justify-center py-32 text-slate-400">
@@ -187,7 +202,7 @@ export default function Calendario() {
                       <div key={ev.id} className={`w-full h-1.5 rounded-full ${tipoConfig[ev.tipo]?.dot || 'bg-slate-400'}`} title={ev.titolo} />
                     ))}
                     {tasksDay.slice(0, 2).map(t => (
-                      <div key={t.id} className={`w-full h-1.5 rounded-full opacity-70 ${prioritaDot[t.priorita] || 'bg-slate-400'}`} title={`Task: ${t.titolo}`} />
+                      <div key={t.id} className={`w-full h-1.5 rounded-full opacity-70 ${t.stato === 'Done' ? 'bg-emerald-500' : prioritaDot[t.priorita] || 'bg-slate-400'}`} title={`Task: ${t.titolo}`} />
                     ))}
                   </div>
                 </div>
@@ -231,22 +246,34 @@ export default function Calendario() {
 
           {/* Task in scadenza */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <h3 className="font-semibold text-slate-800 mb-4">Task in scadenza</h3>
+            <h3 className="font-semibold text-slate-800 mb-4">Task sul calendario</h3>
             <div className="space-y-2">
-              {prossimiTask.length === 0 ? (
-                <p className="text-sm text-slate-400 text-center py-4">Nessun task in scadenza</p>
-              ) : prossimiTask.map(t => (
-                <div key={t.id} className="flex gap-3 items-center p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className={`w-2 h-2 rounded-full shrink-0 ${prioritaDot[t.priorita] || 'bg-slate-400'}`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-700 truncate">{t.titolo}</p>
-                    <p className="text-xs text-slate-400">{t.scadenza}</p>
+              {taskCalendario.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-4">Nessun task con scadenza</p>
+              ) : taskCalendario.map(t => {
+                const isDone = t.stato === 'Done';
+                const isScaduto = !isDone && t.scadenza < oggi_str;
+                return (
+                  <div key={t.id} className={`flex gap-3 items-center p-2.5 rounded-xl transition-colors ${isDone ? 'bg-emerald-50' : isScaduto ? 'bg-rose-50' : 'hover:bg-slate-50'}`}>
+                    <div className={`w-2 h-2 rounded-full shrink-0 ${isDone ? 'bg-emerald-500' : prioritaDot[t.priorita] || 'bg-slate-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-medium truncate ${isDone ? 'text-emerald-700 line-through' : 'text-slate-700'}`}>{t.titolo}</p>
+                      <p className={`text-xs ${isDone ? 'text-emerald-500' : isScaduto ? 'text-rose-500 font-medium' : 'text-slate-400'}`}>
+                        {isScaduto ? '⚠ ' : ''}{t.scadenza}
+                      </p>
+                    </div>
+                    {isDone ? (
+                      <button onClick={() => removeTask(t.id)} className="text-xs bg-emerald-100 text-emerald-700 hover:bg-emerald-200 px-2 py-1 rounded-lg font-medium transition-colors shrink-0">
+                        Rimuovi
+                      </button>
+                    ) : (
+                      <button onClick={() => completeTask(t.id)} className="text-slate-300 hover:text-emerald-500 transition-colors shrink-0" title="Segna completato">
+                        <CheckCircle2 size={16} />
+                      </button>
+                    )}
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium border shrink-0 ${prioritaColor[t.priorita] || 'bg-slate-100 text-slate-600'}`}>
-                    {t.priorita}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
