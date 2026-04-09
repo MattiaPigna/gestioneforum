@@ -1,7 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// @ts-ignore
-import webPush from 'npm:web-push'
+import webPush from 'npm:web-push@3.6.7'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,67 +10,79 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
-  const { title, body, url = '/', assegnatario } = await req.json()
+  try {
+    const VAPID_PUBLIC  = Deno.env.get('VAPID_PUBLIC_KEY')
+    const VAPID_PRIVATE = Deno.env.get('VAPID_PRIVATE_KEY')
+    const VAPID_EMAIL   = Deno.env.get('VAPID_EMAIL') ?? 'mattiapignatiel@gmail.com'
 
-  const supabase = createClient(
-    Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-  )
+    if (!VAPID_PUBLIC || !VAPID_PRIVATE) {
+      return new Response(
+        JSON.stringify({ error: 'VAPID secrets non configurati su Supabase' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-  webPush.setVapidDetails(
-    `mailto:${Deno.env.get('VAPID_EMAIL') ?? 'admin@forum.it'}`,
-    Deno.env.get('VAPID_PUBLIC_KEY')!,
-    Deno.env.get('VAPID_PRIVATE_KEY')!,
-  )
+    webPush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC, VAPID_PRIVATE)
 
-  // Recupera le subscription da inviare
-  let subscriptions: { id: string; subscription: any }[] = []
+    const body = await req.json()
+    const { title, pushbody, url = '/', assegnatario } = { pushbody: body.body, ...body }
 
-  if (assegnatario) {
-    // Solo la subscription dell'assegnatario
-    const { data: socio } = await supabase
-      .from('soci')
-      .select('id')
-      .eq('nome', assegnatario)
-      .maybeSingle()
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
 
-    if (socio) {
+    let subscriptions: { id: string; subscription: any }[] = []
+
+    if (assegnatario) {
+      const { data: socio } = await supabase
+        .from('soci').select('id').eq('nome', assegnatario).maybeSingle()
+      if (socio) {
+        const { data } = await supabase
+          .from('push_subscriptions').select('id, subscription').eq('socio_id', socio.id)
+        subscriptions = data ?? []
+      }
+    } else {
       const { data } = await supabase
-        .from('push_subscriptions')
-        .select('id, subscription')
-        .eq('socio_id', socio.id)
+        .from('push_subscriptions').select('id, subscription')
       subscriptions = data ?? []
     }
-  } else {
-    // Tutti gli iscritti
-    const { data } = await supabase
-      .from('push_subscriptions')
-      .select('id, subscription')
-    subscriptions = data ?? []
-  }
 
-  const payload = JSON.stringify({ title, body, url })
-  const toDelete: string[] = []
+    if (subscriptions.length === 0) {
+      return new Response(
+        JSON.stringify({ sent: 0, info: 'Nessuna subscription trovata' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-  await Promise.allSettled(
-    subscriptions.map(async (row) => {
-      try {
-        await webPush.sendNotification(row.subscription, payload)
-      } catch (e: any) {
-        // Subscription scaduta o non valida → la eliminiamo
-        if (e.statusCode === 410 || e.statusCode === 404) {
-          toDelete.push(row.id)
+    const payload = JSON.stringify({ title, body: pushbody, url })
+    const toDelete: string[] = []
+    let sent = 0
+
+    await Promise.allSettled(
+      subscriptions.map(async (row) => {
+        try {
+          await webPush.sendNotification(row.subscription, payload)
+          sent++
+        } catch (e: any) {
+          if (e.statusCode === 410 || e.statusCode === 404) toDelete.push(row.id)
         }
-      }
-    })
-  )
+      })
+    )
 
-  if (toDelete.length > 0) {
-    await supabase.from('push_subscriptions').delete().in('id', toDelete)
+    if (toDelete.length > 0) {
+      await supabase.from('push_subscriptions').delete().in('id', toDelete)
+    }
+
+    return new Response(
+      JSON.stringify({ sent, total: subscriptions.length, deleted: toDelete.length }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err.message ?? String(err) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   }
-
-  return new Response(
-    JSON.stringify({ sent: subscriptions.length - toDelete.length }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
-  )
 })
