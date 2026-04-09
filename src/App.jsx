@@ -13,6 +13,7 @@ import Calendario from './components/Calendario';
 import Statistiche from './components/Statistiche';
 import Profilo from './components/Profilo';
 import Finanze from './components/Finanze';
+import GestioneRuoli from './components/GestioneRuoli';
 import InstallBanner from './components/InstallBanner';
 import { supabase } from './lib/supabase';
 

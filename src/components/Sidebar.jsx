@@ -1,20 +1,20 @@
-import { LayoutDashboard, Vote, CheckSquare, MessageSquare, HardDrive, Users, CalendarDays, BarChart2, UserCircle, X, ChevronRight, LogOut, Wallet } from 'lucide-react';
+import { LayoutDashboard, Vote, CheckSquare, MessageSquare, HardDrive, Users, CalendarDays, BarChart2, UserCircle, X, ChevronRight, LogOut, Wallet, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { id: 'dashboard',   label: 'Dashboard',           icon: LayoutDashboard, roleRequired: false },
-  { id: 'calendario',  label: 'Calendario & Eventi',  icon: CalendarDays,    roleRequired: false },
-  { id: 'proposte',    label: 'Proposte & Votazioni', icon: Vote,            roleRequired: false },
-  { id: 'tasks',       label: 'Task & Progetti',      icon: CheckSquare,     roleRequired: false },
-  { id: 'chat',        label: 'Chat di Comunità',     icon: MessageSquare,   roleRequired: false },
-  { id: 'drive',       label: 'Archivio Drive',       icon: HardDrive,       roleRequired: false },
-  { id: 'soci',        label: 'Anagrafica Soci',      icon: Users,           roleRequired: false },
-  { id: 'finanze',     label: 'Finanze',              icon: Wallet,          roleRequired: true  },
-  { id: 'statistiche', label: 'Statistiche',          icon: BarChart2,       roleRequired: false },
+  { id: 'dashboard',    label: 'Dashboard',           icon: LayoutDashboard },
+  { id: 'calendario',   label: 'Calendario & Eventi',  icon: CalendarDays },
+  { id: 'proposte',     label: 'Proposte & Votazioni', icon: Vote },
+  { id: 'tasks',        label: 'Task & Progetti',      icon: CheckSquare },
+  { id: 'chat',         label: 'Chat di Comunità',     icon: MessageSquare },
+  { id: 'drive',        label: 'Archivio Drive',       icon: HardDrive },
+  { id: 'soci',         label: 'Anagrafica Soci',      icon: Users },
+  { id: 'finanze',      label: 'Finanze',              icon: Wallet },
+  { id: 'statistiche',  label: 'Statistiche',          icon: BarChart2 },
 ];
 
 export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }) {
-  const { socio, logout, hasRole } = useAuth();
+  const { socio, logout, canSee, canEdit } = useAuth();
 
   return (
     <>
@@ -41,7 +41,7 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {navItems.filter(item => !item.roleRequired || hasRole()).map(({ id, label, icon: Icon }) => {
+          {navItems.filter(item => canSee(item.id)).map(({ id, label, icon: Icon }) => {
             const isActive = activeSection === id;
             return (
               <button key={id} onClick={() => { onNavigate(id); onToggle(false); }}
@@ -54,8 +54,20 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
             );
           })}
 
+          {/* Gestione Ruoli — solo chi può modificare */}
+          {canEdit() && (
+            <div className="pt-2 border-t border-slate-100 mt-2 space-y-1">
+              <button onClick={() => { onNavigate('ruoli'); onToggle(false); }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
+                  ${activeSection === 'ruoli' ? 'bg-gradient-to-r from-blue-500 to-teal-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
+                <ShieldCheck size={18} className={activeSection === 'ruoli' ? 'text-white' : 'text-slate-400 group-hover:text-blue-500'} />
+                <span className="flex-1 text-left">Gestione Ruoli</span>
+              </button>
+            </div>
+          )}
+
           {/* Profilo */}
-          <div className="pt-2 border-t border-slate-100 mt-2">
+          <div className={`pt-2 border-t border-slate-100 mt-2 ${canEdit() ? '' : ''}`}>
             <button onClick={() => { onNavigate('profilo'); onToggle(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
                 ${activeSection === 'profilo' ? 'bg-gradient-to-r from-blue-500 to-teal-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>
