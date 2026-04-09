@@ -77,7 +77,9 @@ export default function Tasks() {
       assegnatario: form.assegnatario,
       scadenza: form.scadenza || null,
     }]).select().single();
-    if (!error) {
+    if (error) {
+      alert('Errore: ' + error.message);
+    } else {
       setTasks(prev => [data, ...prev]);
       setForm({ titolo: '', descrizione: '', priorita: 'Media', stato: 'To Do', assegnatario: '', scadenza: '' });
       setShowForm(false);
