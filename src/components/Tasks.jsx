@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2, Loader2, Download, FileText, Pencil, Save, Ban, ChevronDown } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2, Loader2, Download, FileText, Pencil, Save, Ban } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportTasksCSV, exportTasksPDF } from '../utils/export';
@@ -21,91 +21,76 @@ const statoConfig = {
 const colonne = ['To Do', 'In Progress', 'Done', 'Annullata'];
 const emptyForm = { titolo: '', descrizione: '', priorita: 'Media', stato: 'To Do', assegnatario: '', scadenza: '', evento_id: '' };
 
-function StatusMenu({ task, onChangeStato }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  const cfg = statoConfig[task.stato] || statoConfig['To Do'];
-  const Icon = cfg.icon;
-
-  useEffect(() => {
-    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(o => !o)}
-        className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full font-medium ${cfg.badge} transition-all`}
-      >
-        <Icon size={10} />
-        {task.stato}
-        <ChevronDown size={9} className="opacity-60" />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full mt-1 bg-white rounded-xl shadow-xl border border-slate-100 z-20 overflow-hidden min-w-[130px]">
-          {Object.entries(statoConfig).map(([stato, s]) => {
-            const I = s.icon;
-            return (
-              <button
-                key={stato}
-                onClick={() => { onChangeStato(task, stato); setOpen(false); }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium hover:bg-slate-50 transition-colors ${task.stato === stato ? 'opacity-40 cursor-default' : ''}`}
-              >
-                <I size={12} className={s.iconColor} />
-                {stato}
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
+const statoBtns = [
+  { stato: 'To Do',       icon: Circle,       cls: 'bg-slate-100 text-slate-600 hover:bg-slate-200',   activeCls: 'bg-slate-500 text-white' },
+  { stato: 'In Progress', icon: Clock,        cls: 'bg-blue-50 text-blue-600 hover:bg-blue-100',        activeCls: 'bg-blue-500 text-white' },
+  { stato: 'Done',        icon: CheckCircle,  cls: 'bg-teal-50 text-teal-600 hover:bg-teal-100',        activeCls: 'bg-teal-500 text-white' },
+  { stato: 'Annullata',   icon: Ban,          cls: 'bg-rose-50 text-rose-500 hover:bg-rose-100',        activeCls: 'bg-rose-400 text-white' },
+];
 
 function TaskCard({ task, eventi, onDelete, onEdit, onChangeStato }) {
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const eventoCollegato = eventi.find(e => e.id === task.evento_id);
   const isDone = task.stato === 'Done';
   const isAnnullata = task.stato === 'Annullata';
+
   return (
-    <div className={`bg-white rounded-xl p-4 shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all group ${isAnnullata ? 'opacity-60' : ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all shrink-0">
-          <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors">
-            <Pencil size={13} />
-          </button>
-          <button onClick={() => onDelete(task.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
-            <Trash2 size={13} />
-          </button>
+    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all`}>
+      {/* Contenuto card */}
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2">
+          <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
+          <div className="flex gap-1 shrink-0">
+            <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors p-0.5">
+              <Pencil size={13} />
+            </button>
+            <button onClick={() => onDelete(task.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-0.5">
+              <Trash2 size={13} />
+            </button>
+          </div>
         </div>
-      </div>
-      {task.descrizione && <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{task.descrizione}</p>}
-      <div className="flex items-center justify-between mt-3">
-        <StatusMenu task={task} onChangeStato={onChangeStato} />
-        {task.assegnatario && (
-          <div className="flex items-center gap-1">
-            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
-              <span className="text-white text-[9px] font-bold">{task.assegnatario.split(' ').map(n => n[0]).join('')}</span>
+        {task.descrizione && <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{task.descrizione}</p>}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+          {task.scadenza && (
+            <div className="flex items-center gap-1">
+              <Clock size={10} className="text-slate-400" />
+              <span className="text-xs text-slate-400">{task.scadenza}</span>
             </div>
-            <span className="text-xs text-slate-400">{task.assegnatario.split(' ')[0]}</span>
+          )}
+          {task.assegnatario && (
+            <div className="flex items-center gap-1 ml-auto">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                <span className="text-white text-[9px] font-bold">{task.assegnatario.split(' ').map(n => n[0]).join('')}</span>
+              </div>
+              <span className="text-xs text-slate-400">{task.assegnatario.split(' ')[0]}</span>
+            </div>
+          )}
+        </div>
+        {eventoCollegato && (
+          <div className="mt-2 flex items-center gap-1 bg-blue-50 rounded-lg px-2 py-1">
+            <span className="text-[10px] text-blue-600 font-medium">📅 {eventoCollegato.titolo}</span>
           </div>
         )}
       </div>
-      <div className="flex items-center gap-3 mt-2">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
-        {task.scadenza && (
-          <div className="flex items-center gap-1">
-            <Clock size={10} className="text-slate-400" />
-            <span className="text-xs text-slate-400">{task.scadenza}</span>
-          </div>
-        )}
-      </div>
-      {eventoCollegato && (
-        <div className="mt-2 flex items-center gap-1 bg-blue-50 rounded-lg px-2 py-1">
-          <span className="text-[10px] text-blue-600 font-medium">📅 {eventoCollegato.titolo}</span>
+
+      {/* Pulsanti stato */}
+      {onChangeStato && (
+        <div className="grid grid-cols-4 border-t border-slate-100 rounded-b-xl overflow-hidden">
+          {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
+            const isActive = task.stato === stato;
+            return (
+              <button
+                key={stato}
+                onClick={() => onChangeStato(task, stato)}
+                disabled={isActive}
+                className={`flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-semibold transition-all ${isActive ? activeCls : cls}`}
+              >
+                <Icon size={14} />
+                <span className="leading-none">{stato === 'In Progress' ? 'In corso' : stato}</span>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
