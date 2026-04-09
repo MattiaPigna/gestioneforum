@@ -33,8 +33,7 @@ self.addEventListener('push', (event) => {
       badge: '/icons/icon-96.png',
       data: { url },
       vibrate: [100, 50, 100],
-      tag: 'forum',
-      renotify: true,
+      tag: `forum-${Date.now()}`,
     })
   );
 });

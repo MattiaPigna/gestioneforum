@@ -31,41 +31,41 @@ const sectionTitles = {
   profilo:     'Il mio Profilo',
 };
 
-function NotifichePanel({ open, onClose }) {
+function useNotifiche() {
   const [notifiche, setNotifiche] = useState([]);
+  const [lette, setLette] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('notif-lette') || '[]'); } catch { return []; }
+  });
 
-  useEffect(() => {
-    if (!open) return;
-    const fetchAll = async () => {
-      const oggi = new Date().toISOString().split('T')[0];
-      const fra7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+  const fetch = async () => {
+    const oggi = new Date().toISOString().split('T')[0];
+    const fra7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
+    const [{ data: tasks }, { data: eventi }] = await Promise.all([
+      supabase.from('tasks').select('titolo, scadenza, stato').lte('scadenza', fra7).neq('stato', 'Done').not('scadenza', 'is', null),
+      supabase.from('eventi').select('titolo, data, tipo').lte('data', fra7).gte('data', oggi),
+    ]);
+    const items = [
+      ...(tasks || []).map(t => ({ id: 'task-' + t.titolo, tipo: 'task', titolo: `Task in scadenza: ${t.titolo}`, data: t.scadenza, urgente: t.scadenza <= oggi })),
+      ...(eventi || []).map(e => ({ id: 'ev-' + e.titolo, tipo: 'evento', titolo: `Evento: ${e.titolo}`, data: e.data, urgente: e.data === oggi })),
+    ].sort((a, b) => a.data.localeCompare(b.data));
+    setNotifiche(items);
+  };
 
-      const [{ data: tasks }, { data: eventi }] = await Promise.all([
-        supabase.from('tasks').select('titolo, scadenza, stato').lte('scadenza', fra7).neq('stato', 'Done').not('scadenza', 'is', null),
-        supabase.from('eventi').select('titolo, data, tipo').lte('data', fra7).gte('data', oggi),
-      ]);
+  useEffect(() => { fetch(); }, []);
 
-      const items = [
-        ...(tasks || []).map(t => ({
-          id: 'task-' + t.titolo,
-          tipo: 'task',
-          titolo: `Task in scadenza: ${t.titolo}`,
-          data: t.scadenza,
-          urgente: t.scadenza <= oggi,
-        })),
-        ...(eventi || []).map(e => ({
-          id: 'ev-' + e.titolo,
-          tipo: 'evento',
-          titolo: `Evento: ${e.titolo}`,
-          data: e.data,
-          urgente: e.data === oggi,
-        })),
-      ].sort((a, b) => a.data.localeCompare(b.data));
+  const nonLette = notifiche.filter(n => !lette.includes(n.id)).length;
 
-      setNotifiche(items);
-    };
-    fetchAll();
-  }, [open]);
+  const segnaLette = () => {
+    const ids = notifiche.map(n => n.id);
+    setLette(ids);
+    localStorage.setItem('notif-lette', JSON.stringify(ids));
+  };
+
+  return { notifiche, nonLette, segnaLette };
+}
+
+function NotifichePanel({ open, onClose, notifiche, onRead }) {
+  useEffect(() => { if (open) onRead(); }, [open]);
 
   if (!open) return null;
 
@@ -98,6 +98,7 @@ function AppInner() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const { notifiche, nonLette, segnaLette } = useNotifiche();
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -147,8 +148,13 @@ function AppInner() {
             <div className="relative">
               <button onClick={() => setNotifOpen(p => !p)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors relative">
                 <Bell size={18} />
+                {nonLette > 0 && (
+                  <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 rounded-full text-white text-[9px] font-bold flex items-center justify-center">
+                    {nonLette > 9 ? '9+' : nonLette}
+                  </span>
+                )}
               </button>
-              <NotifichePanel open={notifOpen} onClose={() => setNotifOpen(false)} />
+              <NotifichePanel open={notifOpen} onClose={() => setNotifOpen(false)} notifiche={notifiche} onRead={segnaLette} />
             </div>
           </div>
         </header>
