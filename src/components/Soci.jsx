@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Mail, Calendar, Shield, ChevronUp, ChevronDown, Plus, X, Trash2, Loader2, Download, FileText } from 'lucide-react';
+import { Search, Mail, Calendar, Shield, ChevronUp, ChevronDown, Plus, X, Trash2, Loader2, Download, FileText, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportSociCSV, exportSociPDF } from '../utils/export';
@@ -13,6 +13,8 @@ const ruoloColor = {
   'Membro': 'bg-slate-100 text-slate-600',
 };
 
+const emptyForm = { nome: '', ruolo: 'Membro', email: '', iscrizione: '' };
+
 export default function Soci() {
   const { canEdit } = useAuth();
   const [soci, setSoci] = useState([]);
@@ -22,12 +24,11 @@ export default function Soci() {
   const [filtroRuolo, setFiltroRuolo] = useState('tutti');
   const [sort, setSort] = useState({ col: 'nome', dir: 'asc' });
   const [showForm, setShowForm] = useState(false);
+  const [editSocio, setEditSocio] = useState(null); // socio in modifica
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ nome: '', ruolo: 'Membro', email: '', iscrizione: '' });
+  const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => {
-    fetchSoci();
-  }, []);
+  useEffect(() => { fetchSoci(); }, []);
 
   const fetchSoci = async () => {
     setLoading(true);
@@ -37,24 +38,34 @@ export default function Soci() {
     setLoading(false);
   };
 
-  const handleAdd = async () => {
+  const openAdd = () => { setEditSocio(null); setForm(emptyForm); setShowForm(true); };
+  const openEdit = (socio) => { setEditSocio(socio); setForm({ nome: socio.nome, ruolo: socio.ruolo, email: socio.email || '', iscrizione: socio.iscrizione || '' }); setShowForm(true); };
+
+  const handleSave = async () => {
     if (!form.nome.trim()) return;
     setSaving(true);
-    const avatar = form.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    const { data, error } = await supabase.from('soci').insert([{
-      nome: form.nome,
-      ruolo: form.ruolo,
-      email: form.email,
-      iscrizione: form.iscrizione || new Date().toISOString().split('T')[0],
-      avatar,
-    }]).select().single();
-    if (!error) {
-      setSoci(prev => [...prev, data]);
-      setForm({ nome: '', ruolo: 'Membro', email: '', iscrizione: '' });
-      setShowForm(false);
+    if (editSocio) {
+      // Modifica
+      const { data, error } = await supabase.from('soci').update({
+        nome: form.nome,
+        ruolo: form.ruolo,
+        email: form.email,
+        iscrizione: form.iscrizione || editSocio.iscrizione,
+        avatar: form.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2),
+      }).eq('id', editSocio.id).select().single();
+      if (!error) setSoci(prev => prev.map(s => s.id === editSocio.id ? data : s));
+      else alert('Errore: ' + error.message);
     } else {
-      alert('Errore: ' + error.message);
+      // Nuovo
+      const avatar = form.nome.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+      const { data, error } = await supabase.from('soci').insert([{
+        nome: form.nome, ruolo: form.ruolo, email: form.email,
+        iscrizione: form.iscrizione || new Date().toISOString().split('T')[0], avatar,
+      }]).select().single();
+      if (!error) setSoci(prev => [...prev, data]);
+      else alert('Errore: ' + error.message);
     }
+    setShowForm(false);
     setSaving(false);
   };
 
@@ -74,7 +85,7 @@ export default function Soci() {
   const filtered = soci
     .filter(s => {
       const q = search.toLowerCase();
-      const matchSearch = s.nome.toLowerCase().includes(q) || s.email.toLowerCase().includes(q) || s.ruolo.toLowerCase().includes(q);
+      const matchSearch = s.nome.toLowerCase().includes(q) || (s.email || '').toLowerCase().includes(q) || s.ruolo.toLowerCase().includes(q);
       const matchRuolo = filtroRuolo === 'tutti' || s.ruolo === filtroRuolo;
       return matchSearch && matchRuolo;
     })
@@ -105,7 +116,6 @@ export default function Soci() {
     <div className="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-rose-600">
       <p className="font-semibold">Errore di connessione al database</p>
       <p className="text-sm mt-1">{error}</p>
-      <p className="text-xs mt-3 text-rose-400">Assicurati di aver creato la tabella <code>soci</code> su Supabase.</p>
     </div>
   );
 
@@ -126,36 +136,30 @@ export default function Soci() {
             </button>
           </div>
           {canEdit() && (
-            <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">
+            <button onClick={openAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">
               <Plus size={16} /> Nuovo Socio
             </button>
           )}
         </div>
       </div>
 
+      {/* Modal aggiunta / modifica */}
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-800">Nuovo Socio</h3>
+              <h3 className="text-lg font-bold text-slate-800">{editSocio ? 'Modifica Socio' : 'Nuovo Socio'}</h3>
               <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
             </div>
             <div className="space-y-3">
-              {[
-                { label: 'Nome e Cognome *', field: 'nome', placeholder: 'Es. Mario Rossi' },
-                { label: 'Email', field: 'email', placeholder: 'mario.rossi@forum.it', type: 'email' },
-              ].map(({ label, field, placeholder, type }) => (
-                <div key={field}>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">{label}</label>
-                  <input
-                    type={type || 'text'}
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder={placeholder}
-                    value={form[field]}
-                    onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
-                  />
-                </div>
-              ))}
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Nome e Cognome *</label>
+                <input type="text" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Es. Mario Rossi" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
+                <input type="email" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="mario.rossi@forum.it" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+              </div>
               <div>
                 <label className="text-xs font-medium text-slate-600 block mb-1">Ruolo</label>
                 <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.ruolo} onChange={e => setForm(f => ({ ...f, ruolo: e.target.value }))}>
@@ -169,9 +173,9 @@ export default function Soci() {
             </div>
             <div className="flex gap-3 mt-5">
               <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Annulla</button>
-              <button onClick={handleAdd} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2">
+              <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2">
                 {saving && <Loader2 size={14} className="animate-spin" />}
-                Aggiungi
+                {editSocio ? 'Salva modifiche' : 'Aggiungi'}
               </button>
             </div>
           </div>
@@ -216,7 +220,7 @@ export default function Soci() {
                 <ThButton col="ruolo">Ruolo</ThButton>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                 <ThButton col="iscrizione">Iscrizione</ThButton>
-                <th className="px-4 py-3 w-10"></th>
+                {canEdit() && <th className="px-4 py-3 w-20"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -237,10 +241,10 @@ export default function Soci() {
                     <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${ruoloColor[socio.ruolo] || ruoloColor['Membro']}`}>{socio.ruolo}</span>
                   </td>
                   <td className="px-4 py-3.5">
-                    <a href={`mailto:${socio.email}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-500 transition-colors">
-                      <Mail size={12} className="text-slate-400" />
-                      {socio.email}
-                    </a>
+                    {socio.email
+                      ? <a href={`mailto:${socio.email}`} className="flex items-center gap-1.5 text-sm text-slate-600 hover:text-blue-500 transition-colors"><Mail size={12} className="text-slate-400" />{socio.email}</a>
+                      : <span className="text-xs text-slate-300 italic">Non inserita</span>
+                    }
                   </td>
                   <td className="px-4 py-3.5">
                     <div className="flex items-center gap-1.5 text-sm text-slate-500">
@@ -248,13 +252,18 @@ export default function Soci() {
                       {socio.iscrizione}
                     </div>
                   </td>
-                  <td className="px-4 py-3.5">
-                    {canEdit() && (
-                      <button onClick={() => handleDelete(socio.id)} className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all">
-                        <Trash2 size={15} />
-                      </button>
-                    )}
-                  </td>
+                  {canEdit() && (
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                        <button onClick={() => openEdit(socio)} className="text-slate-400 hover:text-blue-500 transition-colors" title="Modifica">
+                          <Pencil size={14} />
+                        </button>
+                        <button onClick={() => handleDelete(socio.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title="Elimina">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
