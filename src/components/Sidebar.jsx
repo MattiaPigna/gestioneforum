@@ -14,7 +14,7 @@ const navItems = [
 ];
 
 export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle }) {
-  const { socio, logout, canSee, canEdit } = useAuth();
+  const { socio, logout, canSee, isPresidente } = useAuth();
 
   return (
     <>
@@ -54,8 +54,8 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
             );
           })}
 
-          {/* Gestione Ruoli — solo chi può modificare */}
-          {canEdit() && (
+          {/* Gestione Ruoli — solo il Presidente */}
+          {isPresidente() && (
             <div className="pt-2 border-t border-slate-100 mt-2 space-y-1">
               <button onClick={() => { onNavigate('ruoli'); onToggle(false); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
@@ -67,7 +67,7 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
           )}
 
           {/* Profilo */}
-          <div className={`pt-2 border-t border-slate-100 mt-2 ${canEdit() ? '' : ''}`}>
+          <div className="pt-2 border-t border-slate-100 mt-2">
             <button onClick={() => { onNavigate('profilo'); onToggle(false); }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group
                 ${activeSection === 'profilo' ? 'bg-gradient-to-r from-blue-500 to-teal-500 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}>

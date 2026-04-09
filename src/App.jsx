@@ -93,7 +93,7 @@ function NotifichePanel({ open, onClose }) {
 }
 
 function AppInner() {
-  const { user, loading } = useAuth();
+  const { user, loading, isPresidente } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -118,7 +118,7 @@ function AppInner() {
       case 'finanze':     return <Finanze />;
       case 'statistiche': return <Statistiche />;
       case 'profilo':     return <Profilo />;
-      case 'ruoli':       return <GestioneRuoli />;
+      case 'ruoli':       return isPresidente() ? <GestioneRuoli /> : <Dashboard onNavigate={setActiveSection} />;
       default:            return <Dashboard onNavigate={setActiveSection} />;
     }
   };

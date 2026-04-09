@@ -90,9 +90,10 @@ export function AuthProvider({ children }) {
   const canEdit = () => !!permessi.can_edit;
   const hasRole = () => socio?.ruolo && socio.ruolo !== 'Membro';
   const canSee = (sezione) => !!permessi[sezione];
+  const isPresidente = () => socio?.ruolo === 'Presidente';
 
   return (
-    <AuthContext.Provider value={{ user, socio, permessi, loading, login, logout, register, canEdit, hasRole, canSee }}>
+    <AuthContext.Provider value={{ user, socio, permessi, loading, login, logout, register, canEdit, hasRole, canSee, isPresidente }}>
       {children}
     </AuthContext.Provider>
   );
