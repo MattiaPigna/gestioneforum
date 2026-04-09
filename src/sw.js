@@ -1,9 +1,14 @@
-import { precacheAndRoute } from 'workbox-precaching';
+import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute } from 'workbox-routing';
 import { NetworkFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 
+// Prende il controllo subito, senza aspettare che le vecchie tab si chiudano
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+
 // Precache assets generati da vite-plugin-pwa
+cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 // Cache runtime per Supabase

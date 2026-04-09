@@ -160,11 +160,12 @@ function AppInner() {
         onToggle={() => setSidebarOpen(p => !p)}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-6 py-4 flex items-center gap-4 shrink-0">
-          <button onClick={() => setSidebarOpen(p => !p)} className="lg:hidden text-slate-500 hover:text-slate-700">
+        <header className="bg-white/80 backdrop-blur-sm border-b border-slate-200/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3 shrink-0"
+          style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}>
+          <button onClick={() => setSidebarOpen(p => !p)} className="lg:hidden text-slate-500 hover:text-slate-700 shrink-0">
             <Menu size={20} />
           </button>
-          <h1 className="text-lg font-bold text-slate-800">{sectionTitles[activeSection]}</h1>
+          <h1 className="text-base sm:text-lg font-bold text-slate-800 truncate min-w-0">{sectionTitles[activeSection] ?? 'Forum dei Giovani'}</h1>
           <div className="ml-auto flex items-center gap-3 relative">
             <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg">
               <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
@@ -186,7 +187,7 @@ function AppInner() {
             </p>
           </div>
         )}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-20 lg:pb-6">
           {renderSection()}
         </main>
       </div>
