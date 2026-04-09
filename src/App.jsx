@@ -33,38 +33,42 @@ const sectionTitles = {
 
 function useNotifiche() {
   const [notifiche, setNotifiche] = useState([]);
-  const [lette, setLette] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('notif-lette') || '[]'); } catch { return []; }
-  });
+  const [ultimaLetta, setUltimaLetta] = useState(
+    () => localStorage.getItem('notif-ultima-letta') || ''
+  );
 
-  const fetch = async () => {
-    const oggi = new Date().toISOString().split('T')[0];
-    const fra7 = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
-    const [{ data: tasks }, { data: eventi }] = await Promise.all([
-      supabase.from('tasks').select('titolo, scadenza, stato').lte('scadenza', fra7).neq('stato', 'Done').not('scadenza', 'is', null),
-      supabase.from('eventi').select('titolo, data, tipo').lte('data', fra7).gte('data', oggi),
-    ]);
-    const items = [
-      ...(tasks || []).map(t => ({ id: 'task-' + t.titolo, tipo: 'task', titolo: `Task in scadenza: ${t.titolo}`, data: t.scadenza, urgente: t.scadenza <= oggi })),
-      ...(eventi || []).map(e => ({ id: 'ev-' + e.titolo, tipo: 'evento', titolo: `Evento: ${e.titolo}`, data: e.data, urgente: e.data === oggi })),
-    ].sort((a, b) => a.data.localeCompare(b.data));
-    setNotifiche(items);
+  const carica = async () => {
+    const { data } = await supabase
+      .from('notifiche')
+      .select('id, titolo, corpo, created_at')
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (data) setNotifiche(data);
   };
 
-  useEffect(() => { fetch(); }, []);
+  useEffect(() => { carica(); }, []);
 
-  const nonLette = notifiche.filter(n => !lette.includes(n.id)).length;
+  // Realtime: aggiorna campanella quando arriva nuova notifica
+  useEffect(() => {
+    const channel = supabase
+      .channel('notifiche-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifiche' }, () => carica())
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, []);
+
+  const nonLette = notifiche.filter(n => n.created_at > ultimaLetta).length;
 
   const segnaLette = () => {
-    const ids = notifiche.map(n => n.id);
-    setLette(ids);
-    localStorage.setItem('notif-lette', JSON.stringify(ids));
+    const ora = new Date().toISOString();
+    setUltimaLetta(ora);
+    localStorage.setItem('notif-ultima-letta', ora);
   };
 
-  return { notifiche, nonLette, segnaLette };
+  return { notifiche, nonLette, segnaLette, ultimaLetta };
 }
 
-function NotifichePanel({ open, onClose, notifiche, onRead }) {
+function NotifichePanel({ open, onClose, notifiche, onRead, ultimaLetta }) {
   useEffect(() => { if (open) onRead(); }, [open]);
 
   if (!open) return null;
@@ -78,16 +82,21 @@ function NotifichePanel({ open, onClose, notifiche, onRead }) {
       <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
         {notifiche.length === 0 ? (
           <p className="text-sm text-slate-400 text-center py-8">Nessuna notifica</p>
-        ) : notifiche.map(n => (
-          <div key={n.id} className={`px-4 py-3 ${n.urgente ? 'bg-rose-50' : 'hover:bg-slate-50'}`}>
-            <p className="text-sm font-medium text-slate-700">{n.titolo}</p>
-            <div className="flex items-center gap-2 mt-1">
-              <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${n.tipo === 'task' ? 'bg-blue-100 text-blue-600' : 'bg-teal-100 text-teal-600'}`}>{n.tipo}</span>
-              <span className="text-xs text-slate-400">{n.data}</span>
-              {n.urgente && <span className="text-xs text-rose-500 font-medium">⚠ Oggi</span>}
+        ) : notifiche.map(n => {
+          const nuova = n.created_at > ultimaLetta;
+          return (
+            <div key={n.id} className={`px-4 py-3 ${nuova ? 'bg-blue-50' : 'hover:bg-slate-50'}`}>
+              <div className="flex items-start gap-2">
+                {nuova && <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5" />}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800">{n.titolo}</p>
+                  {n.corpo && <p className="text-xs text-slate-500 mt-0.5 truncate">{n.corpo}</p>}
+                  <p className="text-xs text-slate-400 mt-1">{new Date(n.created_at).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -98,7 +107,7 @@ function AppInner() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const { notifiche, nonLette, segnaLette } = useNotifiche();
+  const { notifiche, nonLette, segnaLette, ultimaLetta } = useNotifiche();
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-slate-100">
@@ -154,7 +163,7 @@ function AppInner() {
                   </span>
                 )}
               </button>
-              <NotifichePanel open={notifOpen} onClose={() => setNotifOpen(false)} notifiche={notifiche} onRead={segnaLette} />
+              <NotifichePanel open={notifOpen} onClose={() => setNotifOpen(false)} notifiche={notifiche} onRead={segnaLette} ultimaLetta={ultimaLetta} />
             </div>
           </div>
         </header>
