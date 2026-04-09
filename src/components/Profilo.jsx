@@ -29,8 +29,17 @@ export default function Profilo() {
       const { data, error } = await supabase.functions.invoke('send-push', {
         body: { title: '🔔 Test notifica', body: 'Funziona!', url: '/', assegnatario: socio.nome },
       });
-      if (error) setTestResult('Errore Edge Function: ' + JSON.stringify(error));
-      else setTestResult('Risposta: ' + JSON.stringify(data));
+      if (error) {
+        // Leggi il corpo della risposta per vedere l'errore dettagliato
+        try {
+          const body = await error.context.json();
+          setTestResult('Errore: ' + JSON.stringify(body));
+        } catch {
+          setTestResult('Errore (no body): ' + error.message);
+        }
+      } else {
+        setTestResult('✅ ' + JSON.stringify(data));
+      }
     } catch (e) {
       setTestResult('Eccezione: ' + e.message);
     }
