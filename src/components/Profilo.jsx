@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
-import { Loader2, Mail, Calendar, Shield, CheckCircle, Clock, Circle, LogOut, Download, Bell } from 'lucide-react';
+import { Loader2, Mail, Calendar, Shield, CheckCircle, Clock, Circle, LogOut, Download, Bell, RefreshCw } from 'lucide-react';
 import { exportSociCSV } from '../utils/export';
 
 const statoConfig = {
@@ -21,6 +21,21 @@ export default function Profilo() {
   const [loading, setLoading] = useState(true);
   const [testResult, setTestResult] = useState('');
   const [testing, setTesting] = useState(false);
+
+  const forzaAggiornamento = async () => {
+    // Svuota tutte le cache del browser
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+    }
+    // Dis-registra tutti i service worker
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+    // Ricarica forzata (bypassa cache)
+    window.location.reload(true);
+  };
 
   const testPush = async () => {
     setTesting(true);
@@ -97,7 +112,10 @@ export default function Profilo() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button onClick={forzaAggiornamento} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 hover:bg-teal-50 text-sm font-medium transition-colors">
+              <RefreshCw size={14} /> Aggiorna app
+            </button>
             <button onClick={testPush} disabled={testing} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-500 hover:bg-blue-50 text-sm font-medium transition-colors disabled:opacity-60">
               <Bell size={14} /> {testing ? 'Invio...' : 'Test notifica'}
             </button>
