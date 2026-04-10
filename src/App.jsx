@@ -179,11 +179,10 @@ function AppInner() {
 
           {/* Logo + titolo sezione */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="lg:hidden w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-md shadow-blue-200 shrink-0 cursor-pointer"
+            <div className="lg:hidden w-8 h-8 rounded-xl bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center shadow-md shadow-violet-200 shrink-0 cursor-pointer"
               onClick={() => setSidebarOpen(p => !p)}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
             </div>
             <div className="min-w-0">
