@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 html {
   height: -webkit-fill-available;
@@ -7,7 +8,7 @@ html {
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f1f5f9;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f5f0 100%);
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overscroll-behavior: none;
@@ -21,13 +22,30 @@ body {
 }
 
 /* Scrollbar desktop */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Nascondi scrollbar su mobile ma mantieni lo scroll */
 @media (max-width: 1024px) {
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
+}
+
+/* Transizioni fluide sulle card */
+.card-hover {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-hover:hover {
+  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Gradiente testo */
+.text-gradient {
+  background: linear-gradient(135deg, #2563eb, #0d9488);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
