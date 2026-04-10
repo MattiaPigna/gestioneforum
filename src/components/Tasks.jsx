@@ -249,18 +249,16 @@ function TaskCard({ task, eventi, onDelete, onEdit, onChangeStato }) {
         )}
       </div>
 
-      {/* Bottom sheet anteprima — solo mobile */}
+      {/* Bottom sheet anteprima */}
       {showPreview && (
-        <div className="md:hidden">
-          <TaskPreviewSheet
-            task={task}
-            eventi={eventi}
-            onClose={() => setShowPreview(false)}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            onChangeStato={onChangeStato}
-          />
-        </div>
+        <TaskPreviewSheet
+          task={task}
+          eventi={eventi}
+          onClose={() => setShowPreview(false)}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onChangeStato={onChangeStato}
+        />
       )}
     </>
   );
@@ -276,6 +274,7 @@ export default function Tasks() {
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [activeTab, setActiveTab] = useState('To Do');
 
   useEffect(() => {
     Promise.all([fetchTasks(), fetchSoci(), fetchEventi()]);
@@ -335,11 +334,12 @@ export default function Tasks() {
       if (error) alert('Errore: ' + error.message);
       else {
         setTasks(prev => prev.map(t => t.id === editId ? data : t));
-        // Notifica completamento (solo quando passa a Done)
-        if (payload.stato === 'Done' && taskPrima?.stato !== 'Done') {
+        // Notifica se lo stato è cambiato
+        if (taskPrima?.stato !== payload.stato) {
+          const statoEmoji = { 'Done': '✅', 'In Progress': '🔄', 'To Do': '📋', 'Annullata': '❌' };
           sendPush({
-            title: '✅ Task completato: ' + payload.titolo,
-            body: payload.assegnatario ? `Completato da ${payload.assegnatario}` : 'Task completato',
+            title: `${statoEmoji[payload.stato] || '📋'} Task aggiornato: ${payload.titolo}`,
+            body: `Stato: ${taskPrima?.stato} → ${payload.stato}${payload.assegnatario ? ` · ${payload.assegnatario}` : ''}`,
             url: '/',
             assegnatario: null,
           });
@@ -377,14 +377,13 @@ export default function Tasks() {
       .from('tasks').update({ stato: nuovoStato }).eq('id', task.id).select().single();
     if (error) { alert('Errore: ' + error.message); return; }
     setTasks(prev => prev.map(t => t.id === task.id ? data : t));
-    if (nuovoStato === 'Done') {
-      sendPush({
-        title: '✅ Task completato: ' + task.titolo,
-        body: task.assegnatario ? `Completato da ${task.assegnatario}` : 'Task completato',
-        url: '/',
-        assegnatario: null,
-      });
-    }
+    const statoEmoji = { 'Done': '✅', 'In Progress': '🔄', 'To Do': '📋', 'Annullata': '❌' };
+    sendPush({
+      title: `${statoEmoji[nuovoStato] || '📋'} Task aggiornato: ${task.titolo}`,
+      body: `Stato: ${task.stato} → ${nuovoStato}${task.assegnatario ? ` · ${task.assegnatario}` : ''}`,
+      url: '/',
+      assegnatario: null,
+    });
   };
 
   if (loading) return (
@@ -469,7 +468,48 @@ export default function Tasks() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* ── Mobile: tab switcher ── */}
+      <div className="md:hidden">
+        <div className="flex gap-1 bg-slate-100 p-1 rounded-2xl mb-4">
+          {colonne.map(col => {
+            const cfg = statoConfig[col];
+            const Icon = cfg.icon;
+            const count = tasks.filter(t => t.stato === col).length;
+            const isActive = activeTab === col;
+            return (
+              <button
+                key={col}
+                onClick={() => setActiveTab(col)}
+                className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-bold transition-all ${
+                  isActive ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500'
+                }`}
+              >
+                <Icon size={14} className={isActive ? cfg.iconColor : ''} />
+                <span>{col === 'In Progress' ? 'In corso' : col}</span>
+                {count > 0 && (
+                  <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? cfg.badge : 'bg-slate-200 text-slate-500'}`}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="space-y-3">
+          {tasks.filter(t => t.stato === activeTab).map(task => (
+            <TaskCard key={task.id} task={task} eventi={eventi} onDelete={handleDelete} onEdit={canEdit() ? openEdit : () => {}} onChangeStato={canEdit() ? handleChangeStato : null} />
+          ))}
+          {tasks.filter(t => t.stato === activeTab).length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+              <AlertCircle size={24} className="mb-2 opacity-40" />
+              <p className="text-sm">Nessun task</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Desktop: kanban grid ── */}
+      <div className="hidden md:grid md:grid-cols-4 gap-5">
         {colonne.map(col => {
           const colTasks = tasks.filter(t => t.stato === col);
           const cfg = statoConfig[col];
