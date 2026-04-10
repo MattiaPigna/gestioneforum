@@ -28,7 +28,7 @@ const statoBtns = [
   { stato: 'Annullata',   icon: Ban,          cls: 'bg-rose-50 text-rose-500 hover:bg-rose-100',        activeCls: 'bg-rose-400 text-white' },
 ];
 
-// Bottom sheet di anteprima task (mobile)
+// Bottom sheet di anteprima task
 function TaskPreviewSheet({ task, eventi, onClose, onEdit, onDelete, onChangeStato }) {
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const eventoCollegato = eventi.find(e => e.id === task.evento_id);
@@ -37,98 +37,140 @@ function TaskPreviewSheet({ task, eventi, onClose, onEdit, onDelete, onChangeSta
 
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
-      {/* Overlay scuro */}
-      <div className="absolute inset-0 bg-black/40" />
+      {/* Overlay con blur */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
       {/* Sheet */}
       <div
-        className="relative w-full bg-white rounded-t-3xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+        className="relative w-full bg-white rounded-t-[32px] shadow-2xl overflow-y-auto"
+        style={{ maxHeight: '92vh' }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Handle bar */}
-        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-1 mb-1" />
-
-        {/* Header: titolo + badge priorità */}
-        <div className="flex items-start gap-3">
-          <div className={`w-1 self-stretch rounded-full ${p.border.replace('border-l-', 'bg-')}`} />
-          <div className="flex-1">
-            <h3 className={`text-base font-bold leading-snug ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-              {task.titolo}
-            </h3>
-            <div className="flex items-center gap-2 mt-1 flex-wrap">
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statoConfig[task.stato]?.badge}`}>{task.stato}</span>
-            </div>
-          </div>
-          <button onClick={onClose} className="text-slate-400 p-1"><X size={20} /></button>
+        {/* Handle */}
+        <div className="pt-3 pb-1 flex justify-center">
+          <div className="w-12 h-1.5 bg-slate-200 rounded-full" />
         </div>
 
-        {/* Descrizione */}
-        {task.descrizione ? (
-          <p className="text-sm text-slate-600 leading-relaxed">{task.descrizione}</p>
-        ) : (
-          <p className="text-sm text-slate-400 italic">Nessuna descrizione</p>
-        )}
+        <div className="px-5 pb-8 space-y-5">
 
-        {/* Meta info */}
-        <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-          {task.scadenza && (
-            <div className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-3 py-2">
-              <Clock size={13} className="text-slate-400" />
-              <span>Scadenza: <strong>{task.scadenza}</strong></span>
-            </div>
-          )}
-          {task.assegnatario && (
-            <div className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-3 py-2">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
-                <span className="text-white text-[9px] font-bold">{task.assegnatario.split(' ').map(n => n[0]).join('')}</span>
+          {/* Barra colorata priorità + close */}
+          <div className="flex items-start gap-3 pt-1">
+            <div className={`w-1.5 self-stretch rounded-full shrink-0 ${
+              task.priorita === 'Alta' ? 'bg-rose-500' :
+              task.priorita === 'Media' ? 'bg-amber-400' : 'bg-emerald-500'
+            }`} />
+            <div className="flex-1 min-w-0">
+              {/* Titolo grande */}
+              <h2 className={`text-xl font-extrabold leading-tight ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                {task.titolo}
+              </h2>
+              {/* Badge */}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <span className={`text-xs px-2.5 py-1 rounded-full font-bold border ${p.color}`}>{task.priorita}</span>
+                <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${statoConfig[task.stato]?.badge}`}>{task.stato}</span>
               </div>
-              <span>{task.assegnatario}</span>
+            </div>
+            <button onClick={onClose}
+              className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 shrink-0 active:scale-90 transition-transform">
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* Descrizione — area grande e leggibile */}
+          <div className="bg-slate-50 rounded-2xl p-4">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Descrizione</p>
+            {task.descrizione ? (
+              <p className="text-base text-slate-700 leading-relaxed font-medium">{task.descrizione}</p>
+            ) : (
+              <p className="text-sm text-slate-400 italic">Nessuna descrizione inserita</p>
+            )}
+          </div>
+
+          {/* Meta info */}
+          {(task.scadenza || task.assegnatario || eventoCollegato) && (
+            <div className="grid grid-cols-1 gap-2">
+              {task.scadenza && (
+                <div className="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                    <Clock size={16} className="text-amber-500" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Scadenza</p>
+                    <p className="text-sm font-bold text-slate-700">{task.scadenza}</p>
+                  </div>
+                </div>
+              )}
+              {task.assegnatario && (
+                <div className="flex items-center gap-3 bg-slate-50 rounded-2xl px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs font-bold">
+                      {task.assegnatario.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Assegnato a</p>
+                    <p className="text-sm font-bold text-slate-700">{task.assegnatario}</p>
+                  </div>
+                </div>
+              )}
+              {eventoCollegato && (
+                <div className="flex items-center gap-3 bg-blue-50 rounded-2xl px-4 py-3">
+                  <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shrink-0 text-lg">
+                    📅
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-blue-400 uppercase tracking-wide">Evento collegato</p>
+                    <p className="text-sm font-bold text-blue-700">{eventoCollegato.titolo}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
-          {eventoCollegato && (
-            <div className="flex items-center gap-1.5 bg-blue-50 rounded-lg px-3 py-2">
-              <span>📅 {eventoCollegato.titolo}</span>
+
+          {/* Cambio stato */}
+          {onChangeStato && (
+            <div>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Cambia stato</p>
+              <div className="grid grid-cols-4 gap-2">
+                {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
+                  const isActive = task.stato === stato;
+                  return (
+                    <button
+                      key={stato}
+                      onClick={() => { onChangeStato(task, stato); onClose(); }}
+                      disabled={isActive}
+                      className={`flex flex-col items-center justify-center py-3.5 gap-1.5 rounded-2xl text-[11px] font-bold transition-all active:scale-95 ${isActive ? activeCls + ' shadow-md' : cls}`}
+                    >
+                      <Icon size={18} />
+                      <span className="leading-none">{stato === 'In Progress' ? 'In corso' : stato}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
+
+          {/* ── Pulsanti principali: MODIFICA ed ELIMINA ── */}
+          {onChangeStato && (
+            <div className="flex flex-col gap-3 pt-1">
+              <button
+                onClick={() => { onEdit(task); onClose(); }}
+                className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-extrabold text-lg shadow-xl shadow-blue-200 active:scale-[.97] transition-all"
+              >
+                <Pencil size={22} strokeWidth={2.5} />
+                Modifica Task
+              </button>
+              <button
+                onClick={() => { onDelete(task.id); onClose(); }}
+                className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl bg-gradient-to-r from-rose-500 to-rose-600 text-white font-extrabold text-lg shadow-xl shadow-rose-200 active:scale-[.97] transition-all"
+              >
+                <Trash2 size={22} strokeWidth={2.5} />
+                Elimina Task
+              </button>
+            </div>
+          )}
+
         </div>
-
-        {/* Pulsanti stato */}
-        {onChangeStato && (
-          <div className="grid grid-cols-4 gap-2">
-            {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
-              const isActive = task.stato === stato;
-              return (
-                <button
-                  key={stato}
-                  onClick={() => { onChangeStato(task, stato); onClose(); }}
-                  disabled={isActive}
-                  className={`flex flex-col items-center justify-center py-3 gap-1 rounded-xl text-[11px] font-semibold transition-all ${isActive ? activeCls : cls}`}
-                >
-                  <Icon size={16} />
-                  <span>{stato === 'In Progress' ? 'In corso' : stato}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pulsanti Modifica / Elimina */}
-        {onChangeStato && (
-          <div className="flex gap-3 pt-1">
-            <button
-              onClick={() => { onEdit(task); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-blue-500 text-white font-bold text-base shadow-lg active:scale-95 transition-all"
-            >
-              <Pencil size={20} /> Modifica
-            </button>
-            <button
-              onClick={() => { onDelete(task.id); onClose(); }}
-              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-rose-500 text-white font-bold text-base shadow-lg active:scale-95 transition-all"
-            >
-              <Trash2 size={20} /> Elimina
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
