@@ -23,16 +23,20 @@ export default function NotificationSetup() {
 
   useEffect(() => {
     if (!socio) return;
-    if (localStorage.getItem('push-setup-done') === '1') return;
 
     const state = getPushPermissionState();
+
     if (state === 'granted') {
-      // Ri-registra sempre la subscription nel DB (potrebbe essere scaduta o mancante)
+      // Ri-registra SEMPRE al caricamento: pulisce subscription duplicate/scadute nel DB
       initPush(socio.id).then(result => {
         if (result === 'granted') localStorage.setItem('push-setup-done', '1');
       });
       return;
     }
+
+    // Se il banner è già stato gestito, non mostrarlo di nuovo
+    if (localStorage.getItem('push-setup-done') === '1') return;
+
     if (state === 'denied') { setStep('denied'); return; }
 
     // iOS fuori dalla home screen → mostra guida installazione
