@@ -16,6 +16,7 @@ import Profilo from './components/Profilo';
 import Finanze from './components/Finanze';
 import GestioneRuoli from './components/GestioneRuoli';
 import InstallBanner from './components/InstallBanner';
+import UpdateBanner from './components/UpdateBanner';
 import { supabase } from './lib/supabase';
 
 const sectionTitles = {
@@ -236,6 +237,7 @@ function AppInner() {
         <NotificationSetup />
       </div>
       <InstallBanner />
+      <UpdateBanner />
     </div>
   );
 }
