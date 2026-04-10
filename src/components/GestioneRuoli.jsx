@@ -110,7 +110,7 @@ export default function GestioneRuoli() {
   if (loading) return (
     <div className="loading-screen">
       <Loader2 size={28} className="animate-spin text-blue-400" />
-      <p>Caricamento ruoli...
+      <p>Caricamento ruoli...</p>
     </div>
   );
 

@@ -70,7 +70,7 @@ export default function Drive() {
   if (loading) return (
     <div className="loading-screen">
       <Loader2 size={28} className="animate-spin text-blue-400" />
-      <p>Caricamento archivio...
+      <p>Caricamento archivio...</p>
     </div>
   );
 

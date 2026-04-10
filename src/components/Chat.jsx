@@ -69,7 +69,7 @@ export default function Chat() {
   if (loading) return (
     <div className="loading-screen">
       <Loader2 size={28} className="animate-spin text-blue-400" />
-      <p>Caricamento chat...
+      <p>Caricamento chat...</p>
     </div>
   );
 

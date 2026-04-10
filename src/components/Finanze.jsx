@@ -100,7 +100,7 @@ export default function Finanze() {
   if (loading) return (
     <div className="loading-screen">
       <Loader2 size={28} className="animate-spin text-blue-400" />
-      <p>Caricamento finanze...
+      <p>Caricamento finanze...</p>
     </div>
   );
 

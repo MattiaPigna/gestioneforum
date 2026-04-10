@@ -28,7 +28,7 @@ export default function Statistiche() {
   if (loading) return (
     <div className="loading-screen">
       <Loader2 size={28} className="animate-spin text-blue-400" />
-      <p>Caricamento statistiche...
+      <p>Caricamento statistiche...</p>
     </div>
   );
 
