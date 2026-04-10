@@ -83,47 +83,56 @@ export default function Profilo() {
   const taskAperti = myTasks.filter(t => t.stato !== 'Done').length;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-4 max-w-3xl">
       <h2 className="page-title">Il mio Profilo</h2>
 
       {/* Card profilo */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-        <div className="flex items-start gap-5">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        {/* Avatar + info */}
+        <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg shrink-0">
             <span className="text-white text-2xl font-bold">{socio.avatar}</span>
           </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-slate-800">{socio.nome}</h3>
-            <span className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">{socio.ruolo}</span>
-            <div className="flex flex-wrap gap-4 mt-3">
-              {socio.email && (
-                <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                  <Mail size={13} className="text-slate-400" />
-                  {socio.email}
-                </div>
-              )}
-              <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                <Calendar size={13} className="text-slate-400" />
-                Iscritto dal {socio.iscrizione}
-              </div>
-              <div className="flex items-center gap-1.5 text-sm text-slate-500">
-                <Shield size={13} className="text-slate-400" />
-                {['Presidente','Vice Presidente','Segretario'].includes(socio.ruolo) ? 'Accesso amministratore' : 'Accesso base'}
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button onClick={forzaAggiornamento} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-teal-200 text-teal-600 hover:bg-teal-50 text-sm font-medium transition-colors">
-              <RefreshCw size={14} /> Aggiorna app
-            </button>
-            <button onClick={testPush} disabled={testing} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-blue-200 text-blue-500 hover:bg-blue-50 text-sm font-medium transition-colors disabled:opacity-60">
-              <Bell size={14} /> {testing ? 'Invio...' : 'Test notifica'}
-            </button>
-            <button onClick={logout} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-200 text-rose-500 hover:bg-rose-50 text-sm font-medium transition-colors">
-              <LogOut size={14} /> Esci
-            </button>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xl font-bold text-slate-800 leading-tight">{socio.nome}</h3>
+            <span className="inline-block mt-1 px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">{socio.ruolo}</span>
           </div>
         </div>
+
+        {/* Info dettagli */}
+        <div className="mt-4 space-y-2">
+          {socio.email && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <Mail size={15} className="text-slate-400 shrink-0" />
+              <span className="truncate">{socio.email}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Calendar size={15} className="text-slate-400 shrink-0" />
+            <span>Iscritto dal {socio.iscrizione}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <Shield size={15} className="text-slate-400 shrink-0" />
+            <span>{['Presidente','Vice Presidente','Segretario'].includes(socio.ruolo) ? 'Accesso amministratore' : 'Accesso base'}</span>
+          </div>
+        </div>
+
+        {/* Bottoni azioni */}
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <button onClick={forzaAggiornamento}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-teal-200 text-teal-600 bg-teal-50 font-semibold text-sm active:bg-teal-100 transition-colors">
+            <RefreshCw size={16} /> Aggiorna app
+          </button>
+          <button onClick={testPush} disabled={testing}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-blue-200 text-blue-600 bg-blue-50 font-semibold text-sm active:bg-blue-100 transition-colors disabled:opacity-50">
+            <Bell size={16} /> {testing ? 'Invio...' : 'Test notifica'}
+          </button>
+          <button onClick={logout}
+            className="flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-rose-200 text-rose-600 bg-rose-50 font-semibold text-sm active:bg-rose-100 transition-colors">
+            <LogOut size={16} /> Esci
+          </button>
+        </div>
+
         {testResult && (
           <div className="mt-3 bg-slate-50 rounded-xl p-3 text-xs text-slate-600 font-mono break-all">
             {testResult}

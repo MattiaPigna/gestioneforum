@@ -215,8 +215,62 @@ export default function Soci() {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      {/* Mobile: card list */}
+      <div className="md:hidden space-y-3">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-400 bg-white rounded-2xl border border-slate-100">
+            <Search size={32} className="opacity-30 mb-2" />
+            <p className="text-sm font-medium">Nessun socio trovato</p>
+          </div>
+        ) : filtered.map((socio) => (
+          <div key={socio.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0 shadow-md shadow-blue-100">
+                <span className="text-white text-lg font-bold">{socio.avatar}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-base font-bold text-slate-800">{socio.nome}</p>
+                <span className={`inline-block mt-1 text-xs px-2.5 py-0.5 rounded-full font-medium ${getRuoloColor(socio.ruolo)}`}>{socio.ruolo}</span>
+              </div>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              {socio.email ? (
+                <a href={`mailto:${socio.email}`} className="flex items-center gap-2 text-sm text-slate-600">
+                  <Mail size={14} className="text-slate-400 shrink-0" />
+                  <span className="truncate">{socio.email}</span>
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-slate-300 italic">
+                  <Mail size={14} className="shrink-0" />
+                  <span>Email non inserita</span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-sm text-slate-500">
+                <Calendar size={14} className="text-slate-400 shrink-0" />
+                <span>Iscritto dal {socio.iscrizione}</span>
+              </div>
+            </div>
+            {canEdit() && (
+              <div className="flex gap-3 mt-4">
+                <button onClick={() => openEdit(socio)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-blue-200 text-blue-600 font-semibold text-sm bg-blue-50 active:bg-blue-100 transition-colors">
+                  <Pencil size={16} /> Modifica
+                </button>
+                <button onClick={() => handleDelete(socio.id)}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-rose-200 text-rose-600 font-semibold text-sm bg-rose-50 active:bg-rose-100 transition-colors">
+                  <Trash2 size={16} /> Elimina
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="text-xs text-slate-400 text-center py-1">
+          {filtered.length} di {soci.length} soci
+        </div>
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden md:block bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-50 border-b border-slate-100">
@@ -225,7 +279,7 @@ export default function Soci() {
                 <ThButton col="ruolo">Ruolo</ThButton>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Email</th>
                 <ThButton col="iscrizione">Iscrizione</ThButton>
-                {canEdit() && <th className="px-4 py-3 w-20"></th>}
+                {canEdit() && <th className="px-4 py-3 w-28"></th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
@@ -259,12 +313,14 @@ export default function Soci() {
                   </td>
                   {canEdit() && (
                     <td className="px-4 py-3.5">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button onClick={() => openEdit(socio)} className="text-slate-400 hover:text-blue-500 transition-colors" title="Modifica">
-                          <Pencil size={14} />
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(socio)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50 text-xs font-medium transition-colors">
+                          <Pencil size={12} /> Modifica
                         </button>
-                        <button onClick={() => handleDelete(socio.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title="Elimina">
-                          <Trash2 size={14} />
+                        <button onClick={() => handleDelete(socio.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-medium transition-colors">
+                          <Trash2 size={12} /> Elimina
                         </button>
                       </div>
                     </td>

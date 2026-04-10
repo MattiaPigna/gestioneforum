@@ -135,18 +135,19 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
       </aside>
 
       {/* ── Bottom Navigation mobile ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-white/95 backdrop-blur-xl border-t border-slate-100 shadow-2xl shadow-slate-200/60"
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-20 bg-white/98 backdrop-blur-xl border-t border-slate-200 shadow-2xl shadow-slate-200/60"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <div className="flex items-center px-2">
+        <div className="flex items-center px-1">
           {/* prime 2 voci */}
           {bottomNavItems.slice(0, 2).map(({ id, label, icon: Icon }) => {
             const isActive = activeSection === id;
             return (
               <button key={id} onClick={() => navigate(id)}
-                className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 transition-colors relative">
-                <Icon size={20} className={isActive ? 'text-blue-500' : 'text-slate-400'} />
-                <span className={`text-[10px] font-semibold ${isActive ? 'text-blue-500' : 'text-slate-400'}`}>{label}</span>
-                {isActive && <span className="absolute bottom-1 w-4 h-0.5 bg-blue-500 rounded-full" />}
+                className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative min-h-[60px] ${isActive ? 'text-blue-500' : 'text-slate-400'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-blue-100' : ''}`}>
+                  <Icon size={23} />
+                </div>
+                <span className={`text-[11px] font-bold`}>{label}</span>
               </button>
             );
           })}
@@ -154,9 +155,9 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
           {/* Pulsante centrale + */}
           {canEdit && (
             <button onClick={onToggle}
-              className="flex-1 flex flex-col items-center justify-center py-1.5">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-xl shadow-blue-300/50 -mt-5 border-4 border-white">
-                <Plus size={22} className="text-white" strokeWidth={2.8} />
+              className="flex-1 flex flex-col items-center justify-center py-1.5 min-h-[60px]">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-xl shadow-blue-300/50 -mt-6 border-4 border-white">
+                <Plus size={26} className="text-white" strokeWidth={2.8} />
               </div>
             </button>
           )}
@@ -166,19 +167,22 @@ export default function Sidebar({ activeSection, onNavigate, isOpen, onToggle })
             const isActive = activeSection === id;
             return (
               <button key={id} onClick={() => navigate(id)}
-                className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 transition-colors relative">
-                <Icon size={20} className={isActive ? 'text-blue-500' : 'text-slate-400'} />
-                <span className={`text-[10px] font-semibold ${isActive ? 'text-blue-500' : 'text-slate-400'}`}>{label}</span>
-                {isActive && <span className="absolute bottom-1 w-4 h-0.5 bg-blue-500 rounded-full" />}
+                className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative min-h-[60px] ${isActive ? 'text-blue-500' : 'text-slate-400'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive ? 'bg-blue-100' : ''}`}>
+                  <Icon size={23} />
+                </div>
+                <span className={`text-[11px] font-bold`}>{label}</span>
               </button>
             );
           })}
 
           {/* Altro → apre sidebar */}
           <button onClick={onToggle}
-            className="flex-1 flex flex-col items-center justify-center py-3 gap-0.5 transition-colors">
-            <Menu size={20} className={isOpen ? 'text-blue-500' : 'text-slate-400'} />
-            <span className={`text-[10px] font-semibold ${isOpen ? 'text-blue-500' : 'text-slate-400'}`}>Altro</span>
+            className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors min-h-[60px] ${isOpen ? 'text-blue-500' : 'text-slate-400'}`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isOpen ? 'bg-blue-100' : ''}`}>
+              <Menu size={23} />
+            </div>
+            <span className="text-[11px] font-bold">Altro</span>
           </button>
         </div>
       </nav>

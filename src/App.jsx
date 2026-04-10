@@ -297,7 +297,7 @@ function AppInner() {
         </header>
 
         {/* ── Main content ── */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto p-3 sm:p-6 pb-24 lg:pb-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-3 sm:p-6 pb-28 lg:pb-8">
           {/* Pull to refresh indicator */}
           {(pulling || refreshing) && (
             <div className="flex justify-center mb-3 -mt-1">
