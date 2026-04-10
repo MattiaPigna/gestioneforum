@@ -98,8 +98,9 @@ export default function Finanze() {
   const saldo = totEntrate - totUscite;
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento finanze...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento finanze...
     </div>
   );
 
@@ -107,7 +108,7 @@ export default function Finanze() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Gestione Finanze</h2>
+          <h2 className="page-title">Gestione Finanze</h2>
           <p className="text-slate-500 mt-1">{movimenti.length} movimenti registrati</p>
         </div>
         <div className="flex gap-2">

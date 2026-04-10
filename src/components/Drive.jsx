@@ -68,8 +68,9 @@ export default function Drive() {
   });
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento archivio...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento archivio...
     </div>
   );
 
@@ -77,7 +78,7 @@ export default function Drive() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Archivio Drive</h2>
+          <h2 className="page-title">Archivio Drive</h2>
           <p className="text-slate-500 mt-1">{files.length} file collegati</p>
         </div>
         <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">

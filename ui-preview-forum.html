@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Forum dei Giovani — UI Preview</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #f0f4ff 0%, #e8f5f0 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+  }
+
+  .scene {
+    display: flex;
+    align-items: center;
+    gap: 44px;
+    max-width: 1180px;
+    width: 100%;
+  }
+
+  /* ════════════════════════════
+     LANDING — SINISTRA
+  ════════════════════════════ */
+  .landing {
+    flex: 0 0 250px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 42px; height: 42px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 6px 18px rgba(37,99,235,.3);
+  }
+  .logo-text { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.2; }
+  .logo-text small { font-size: 10px; font-weight: 500; color: #64748b; display: block; }
+
+  .landing h1 { font-size: 30px; font-weight: 900; color: #0f172a; line-height: 1.15; }
+  .landing h1 .accent { color: #2563eb; }
+  .landing p { font-size: 12.5px; color: #64748b; line-height: 1.65; }
+
+  .feature-list { display: flex; flex-direction: column; gap: 11px; }
+  .feature {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: #334155; font-weight: 600;
+  }
+  .check {
+    width: 20px; height: 20px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .check-blue  { background: #2563eb; }
+  .check-teal  { background: #0d9488; }
+  .check-violet{ background: #7c3aed; }
+  .check-rose  { background: #e11d48; }
+
+  .stores { display: flex; flex-direction: column; gap: 8px; }
+  .store-btn {
+    display: flex; align-items: center; gap: 9px;
+    background: #0f172a; color: #fff;
+    padding: 10px 16px; border-radius: 13px;
+    font-size: 12px; width: fit-content; cursor: pointer;
+  }
+  .store-btn .store-sub { font-size: 9px; color: #94a3b8; display: block; margin-bottom: 1px; }
+  .store-btn .store-name { font-weight: 700; font-size: 12px; }
+
+  /* ════════════════════════════
+     SMARTPHONE BASE
+  ════════════════════════════ */
+  .phone {
+    background: #fff;
+    border-radius: 38px;
+    box-shadow: 0 32px 80px rgba(15,23,42,.18), 0 0 0 2px #e2e8f0;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .phone-main { width: 238px; height: 500px; }
+  .phone-sm   { width: 204px; height: 390px; border-radius: 30px; }
+
+  .notch {
+    width: 78px; height: 20px;
+    background: #0f172a;
+    border-radius: 0 0 14px 14px;
+    margin: 0 auto;
+    position: relative; z-index: 2;
+  }
+  .notch-sm {
+    width: 58px; height: 16px;
+    background: #0f172a;
+    border-radius: 0 0 10px 10px;
+    margin: 0 auto;
+    position: relative; z-index: 2;
+  }
+
+  /* status bar sopra notch */
+  .status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 18px 0;
+    font-size: 8px; font-weight: 700; color: #94a3b8;
+  }
+
+  /* ════════════════════════════
+     DASHBOARD SCREEN
+  ════════════════════════════ */
+  .dash { height: 100%; display: flex; flex-direction: column; }
+  .dash-body { padding: 10px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+
+  .dash-top { display: flex; align-items: center; justify-content: space-between; }
+  .dash-top-left h3 { font-size: 14px; font-weight: 800; color: #0f172a; }
+  .dash-top-left span { font-size: 9px; color: #94a3b8; display: block; margin-top: 1px; }
+  .avatar {
+    width: 32px; height: 32px; border-radius: 11px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .avatar span { color: #fff; font-size: 12px; font-weight: 800; }
+  .notif-dot {
+    position: absolute; top: -2px; right: -2px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #ef4444; border: 1.5px solid #fff;
+  }
+
+  /* mini stats */
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-card {
+    border-radius: 13px; padding: 9px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .stat-card .s-icon {
+    width: 22px; height: 22px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; margin-bottom: 3px;
+  }
+  .stat-card .s-val  { font-size: 16px; font-weight: 800; color: #0f172a; line-height: 1; }
+  .stat-card .s-lbl  { font-size: 8.5px; font-weight: 600; color: #64748b; }
+  .stat-card .s-sub  { font-size: 8px; color: #94a3b8; }
+
+  /* sezione */
+  .sec-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .sec-title { font-size: 10px; font-weight: 800; color: #0f172a; }
+  .sec-link  { font-size: 8.5px; color: #2563eb; font-weight: 600; }
+
+  /* task list mini */
+  .task-list { display: flex; flex-direction: column; gap: 5px; }
+  .task-row {
+    display: flex; align-items: center; gap: 7px;
+    background: #f8fafc; border-radius: 10px; padding: 7px 9px;
+  }
+  .task-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .t-title { font-size: 10px; font-weight: 700; color: #1e293b; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .badge {
+    font-size: 7.5px; font-weight: 700; padding: 2px 6px; border-radius: 99px; flex-shrink: 0;
+  }
+
+  /* eventi mini */
+  .eventi-list { display: flex; flex-direction: column; gap: 5px; }
+  .ev-row {
+    display: flex; gap: 7px; align-items: stretch;
+    background: #f8fafc; border-radius: 10px; padding: 7px 9px;
+  }
+  .ev-bar { width: 3px; border-radius: 99px; flex-shrink: 0; }
+  .ev-info { flex: 1; min-width: 0; }
+  .ev-title { font-size: 10px; font-weight: 700; color: #1e293b; }
+  .ev-meta  { font-size: 8px; color: #94a3b8; margin-top: 1px; }
+
+  /* nav bar */
+  .nav {
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 9px 8px 16px;
+    border-top: 1px solid #f1f5f9;
+    background: #fff;
+  }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .nav-item svg { opacity: .38; }
+  .nav-item.active svg { opacity: 1; }
+  .nav-active-dot { width: 4px; height: 4px; border-radius: 50%; background: #2563eb; }
+  .nav-plus {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 14px rgba(37,99,235,.4);
+  }
+
+  /* ════════════════════════════
+     TASK DETAIL (bottom-sheet)
+  ════════════════════════════ */
+  .detail { height: 100%; display: flex; flex-direction: column; }
+  .detail-body { padding: 8px 13px; flex: 1; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+
+  .sheet-handle { width: 32px; height: 3px; border-radius: 99px; background: #e2e8f0; margin: 0 auto 2px; }
+  .detail-meta { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .pill {
+    font-size: 8px; font-weight: 700; padding: 3px 8px; border-radius: 99px;
+  }
+  .pill-blue   { background: #eff6ff; color: #2563eb; }
+  .pill-teal   { background: #f0fdfa; color: #0d9488; }
+  .pill-rose   { background: #fff1f2; color: #e11d48; }
+  .pill-amber  { background: #fffbeb; color: #d97706; }
+  .pill-violet { background: #f5f3ff; color: #7c3aed; }
+  .pill-slate  { background: #f1f5f9; color: #475569; }
+
+  .detail-title { font-size: 13px; font-weight: 800; color: #0f172a; line-height: 1.3; }
+  .detail-desc  { font-size: 9.5px; color: #64748b; line-height: 1.55; }
+  .detail-row   { display: flex; gap: 6px; align-items: center; }
+  .detail-row .dr-label { font-size: 8.5px; color: #94a3b8; font-weight: 600; min-width: 50px; }
+  .detail-row .dr-val   { font-size: 8.5px; color: #334155; font-weight: 700; }
+  .avatar-sm {
+    width: 18px; height: 18px; border-radius: 6px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 8px; font-weight: 800; color: #fff;
+  }
+
+  .stato-btns { display: grid; grid-template-columns: repeat(4,1fr); gap: 4px; }
+  .stato-btn {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 6px 3px; border-radius: 9px;
+    font-size: 7.5px; font-weight: 700; gap: 2px;
+  }
+
+  .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+  .btn-edit {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    background: #2563eb; color: #fff; font-size: 10px; font-weight: 800;
+    padding: 10px; border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(37,99,235,.35);
+  }
+  .btn-del {
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    background: #ef4444; color: #fff; font-size: 10px; font-weight: 800;
+    padding: 10px; border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(239,68,68,.3);
+  }
+
+  /* ════════════════════════════
+     CALENDARIO SCREEN
+  ════════════════════════════ */
+  .cal { height: 100%; display: flex; flex-direction: column; }
+  .cal-body { padding: 8px 13px; flex: 1; display: flex; flex-direction: column; gap: 9px; overflow: hidden; }
+
+  .cal-header { display: flex; align-items: center; justify-content: space-between; }
+  .cal-header h4 { font-size: 13px; font-weight: 800; color: #0f172a; }
+  .cal-header span { font-size: 9px; color: #94a3b8; }
+
+  .month-row { display: flex; align-items: center; gap: 4px; }
+  .month-arrow { font-size: 10px; color: #94a3b8; cursor: pointer; }
+  .month-label { font-size: 11px; font-weight: 700; color: #0f172a; flex: 1; text-align: center; }
+
+  .week-strip { display: flex; gap: 3px; }
+  .day-chip {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    padding: 5px 0; border-radius: 9px; background: #f8fafc;
+  }
+  .day-chip.today { background: #2563eb; }
+  .day-chip .dn { font-size: 7.5px; font-weight: 600; color: #94a3b8; }
+  .day-chip.today .dn { color: rgba(255,255,255,.75); }
+  .day-chip .dd { font-size: 11px; font-weight: 800; color: #1e293b; }
+  .day-chip.today .dd { color: #fff; }
+  .day-chip .dot { width: 4px; height: 4px; border-radius: 50%; background: #2563eb; margin-top: 2px; }
+  .day-chip.today .dot { background: rgba(255,255,255,.6); }
+
+  .sch-list { display: flex; flex-direction: column; gap: 6px; }
+  .sch-item { display: flex; gap: 7px; align-items: stretch; }
+  .sch-time { font-size: 8px; color: #94a3b8; width: 28px; flex-shrink: 0; padding-top: 3px; font-weight: 600; }
+  .sch-block { flex: 1; border-radius: 9px; padding: 7px 9px; border-left: 3px solid transparent; }
+  .sch-block .sb-title { font-size: 10px; font-weight: 700; color: #1e293b; }
+  .sch-block .sb-tag   { font-size: 7.5px; font-weight: 700; margin-top: 2px; display: inline-block;
+    padding: 1px 6px; border-radius: 99px; }
+
+  /* COLONNA DESTRA */
+  .right-col {
+    display: flex; flex-direction: column; gap: 28px; align-items: center;
+  }
+
+  /* ombra aggiuntiva per i phone piccoli */
+  .phone-sm { box-shadow: 0 24px 60px rgba(15,23,42,.16), 0 0 0 2px #e2e8f0; }
+  .phone-sm:first-child { transform: translateX(-12px); }
+  .phone-sm:last-child  { transform: translateX(12px); }
+</style>
+</head>
+<body>
+<div class="scene">
+
+  <!-- ════════════════════ LANDING SINISTRA ════════════════════ -->
+  <div class="landing">
+
+    <div class="logo-row">
+      <div class="logo-icon">
+        <!-- icona forum stilizzata -->
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        Forum dei Giovani
+        <small>Gestione interna</small>
+      </div>
+    </div>
+
+    <div>
+      <h1>Tutto il<br><span class="accent">Forum</span><br>in tasca</h1>
+    </div>
+
+    <p>Gestisci soci, task, proposte, eventi e finanze del Forum dei Giovani direttamente dal tuo smartphone, ovunque tu sia.</p>
+
+    <div class="feature-list">
+      <div class="feature">
+        <div class="check check-blue">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        Task & Progetti in tempo reale
+      </div>
+      <div class="feature">
+        <div class="check check-teal">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        Calendario eventi e scadenze
+      </div>
+      <div class="feature">
+        <div class="check check-violet">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        Proposte & Votazioni democratiche
+      </div>
+      <div class="feature">
+        <div class="check check-rose">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg>
+        </div>
+        Notifiche push istantanee
+      </div>
+    </div>
+
+    <div class="stores">
+      <div class="store-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12l2 2 4-4" stroke-width="2"/></svg>
+        <div>
+          <span class="store-sub">Disponibile su</span>
+          <span class="store-name">Web App PWA</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════ SMARTPHONE CENTRALE — DASHBOARD ════════════════════ -->
+  <div class="phone phone-main">
+    <div class="dash">
+      <div class="status-bar">
+        <span>9:41</span>
+        <div style="display:flex;gap:4px;align-items:center">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="#94a3b8"><path d="M1 6l5 5 5-5z"/><path d="M13 3l5 5 5-5z"/></svg>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+          <svg width="14" height="10" viewBox="0 0 24 16" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="1" y="1" width="18" height="14" rx="3"/><path d="M22 5v6a2 2 0 0 0 0-6z" fill="#94a3b8" stroke="none"/><rect x="3" y="3" width="12" height="10" rx="1.5" fill="#10b981" stroke="none"/></svg>
+        </div>
+      </div>
+      <div class="notch"></div>
+
+      <div class="dash-body">
+        <!-- header -->
+        <div class="dash-top">
+          <div class="dash-top-left">
+            <h3>Buongiorno! 👋</h3>
+            <span>Giovedì, 10 Aprile 2025</span>
+          </div>
+          <div class="avatar">
+            <span>M</span>
+            <div class="notif-dot"></div>
+          </div>
+        </div>
+
+        <!-- stats 2×2 -->
+        <div class="stats-grid">
+          <div class="stat-card" style="background:#eff6ff">
+            <div class="s-icon" style="background:#dbeafe">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div class="s-val">24</div>
+            <div class="s-lbl">Soci Attivi</div>
+            <div class="s-sub">registrati</div>
+          </div>
+          <div class="stat-card" style="background:#f0fdfa">
+            <div class="s-icon" style="background:#ccfbf1">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <div class="s-val">7</div>
+            <div class="s-lbl">Task Aperti</div>
+            <div class="s-sub">3 completati</div>
+          </div>
+          <div class="stat-card" style="background:#f5f3ff">
+            <div class="s-icon" style="background:#ede9fe">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            </div>
+            <div class="s-val">5</div>
+            <div class="s-lbl">Proposte</div>
+            <div class="s-sub">48 voti totali</div>
+          </div>
+          <div class="stat-card" style="background:#fff1f2">
+            <div class="s-icon" style="background:#fecdd3">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="s-val">2</div>
+            <div class="s-lbl">Task Urgenti</div>
+            <div class="s-sub">priorità alta</div>
+          </div>
+        </div>
+
+        <!-- task recenti -->
+        <div>
+          <div class="sec-row">
+            <span class="sec-title">Task Recenti</span>
+            <span class="sec-link">Vedi tutti →</span>
+          </div>
+          <div class="task-list">
+            <div class="task-row">
+              <div class="task-dot" style="background:#2563eb"></div>
+              <span class="t-title">Preparare locandina evento</span>
+              <div class="badge" style="background:#eff6ff;color:#2563eb">In corso</div>
+            </div>
+            <div class="task-row">
+              <div class="task-dot" style="background:#f59e0b"></div>
+              <span class="t-title">Contattare relatori</span>
+              <div class="badge" style="background:#fffbeb;color:#d97706">To Do</div>
+            </div>
+            <div class="task-row">
+              <div class="task-dot" style="background:#10b981"></div>
+              <span class="t-title">Report mensile soci</span>
+              <div class="badge" style="background:#f0fdfa;color:#0d9488">Done</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- prossimi eventi -->
+        <div>
+          <div class="sec-row">
+            <span class="sec-title">Prossimi Appuntamenti</span>
+            <span class="sec-link">Vedi tutti →</span>
+          </div>
+          <div class="eventi-list">
+            <div class="ev-row">
+              <div class="ev-bar" style="background:linear-gradient(#2563eb,#06b6d4)"></div>
+              <div class="ev-info">
+                <div class="ev-title">Riunione mensile</div>
+                <div class="ev-meta">riunione · 15 Apr · 18:30</div>
+              </div>
+            </div>
+            <div class="ev-row">
+              <div class="ev-bar" style="background:linear-gradient(#8b5cf6,#7c3aed)"></div>
+              <div class="ev-info">
+                <div class="ev-title">Workshop Comunicazione</div>
+                <div class="ev-meta">workshop · 22 Apr · 10:00</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- fine dash-body -->
+
+      <!-- Navbar -->
+      <div class="nav">
+        <div class="nav-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563eb" stroke="none"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+          <div class="nav-active-dot"></div>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        </div>
+        <div class="nav-item">
+          <div class="nav-plus">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
+          </div>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════ COLONNA DESTRA ════════════════════ -->
+  <div class="right-col">
+
+    <!-- ── Dettaglio Task (bottom sheet) ── -->
+    <div class="phone phone-sm">
+      <div class="detail">
+        <div class="status-bar" style="padding:4px 14px 0;font-size:7.5px">
+          <span>9:41</span>
+          <span style="color:#10b981;font-weight:700">●&nbsp;Online</span>
+        </div>
+        <div class="notch-sm"></div>
+
+        <div class="detail-body">
+          <!-- handle -->
+          <div class="sheet-handle"></div>
+
+          <!-- intestazione -->
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span style="font-size:11px;font-weight:800;color:#0f172a">Dettaglio Task</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </div>
+
+          <!-- meta pills -->
+          <div class="detail-meta">
+            <div class="pill pill-rose">● Alta priorità</div>
+            <div class="pill pill-blue">In Progress</div>
+          </div>
+
+          <!-- titolo -->
+          <div class="detail-title">Preparare la<br>locandina evento</div>
+
+          <!-- descrizione -->
+          <div class="detail-desc">
+            Creare la grafica per la locandina della riunione mensile di aprile. Includere logo, data, luogo e contatti.
+          </div>
+
+          <!-- dettagli riga -->
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div class="detail-row">
+              <span class="dr-label">Assegnato a</span>
+              <div style="display:flex;align-items:center;gap:4px">
+                <div class="avatar-sm">MP</div>
+                <span class="dr-val">Mattia P.</span>
+              </div>
+            </div>
+            <div class="detail-row">
+              <span class="dr-label">Scadenza</span>
+              <span class="dr-val">14 Apr 2025</span>
+            </div>
+            <div class="detail-row">
+              <span class="dr-label">Evento</span>
+              <span class="dr-val">📅 Riunione mensile</span>
+            </div>
+          </div>
+
+          <!-- stato buttons -->
+          <div>
+            <div class="sec-title" style="margin-bottom:5px">Cambia stato</div>
+            <div class="stato-btns">
+              <div class="stato-btn" style="background:#f1f5f9;color:#475569">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/></svg>
+                To Do
+              </div>
+              <div class="stato-btn" style="background:#2563eb;color:#fff">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                In corso
+              </div>
+              <div class="stato-btn" style="background:#f0fdfa;color:#0d9488">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                Done
+              </div>
+              <div class="stato-btn" style="background:#fff1f2;color:#e11d48">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                Annulla
+              </div>
+            </div>
+          </div>
+
+          <!-- pulsanti azione grandi -->
+          <div class="action-btns">
+            <div class="btn-edit">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Modifica
+            </div>
+            <div class="btn-del">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Elimina
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Calendario ── -->
+    <div class="phone phone-sm">
+      <div class="cal">
+        <div class="status-bar" style="padding:4px 14px 0;font-size:7.5px">
+          <span>9:41</span>
+          <span style="color:#94a3b8">Aprile 2025</span>
+        </div>
+        <div class="notch-sm"></div>
+
+        <div class="cal-body">
+
+          <div class="cal-header">
+            <h4>Calendario &amp; Eventi</h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+
+          <div class="month-row">
+            <span class="month-arrow">‹</span>
+            <span class="month-label">Aprile 2025</span>
+            <span class="month-arrow">›</span>
+          </div>
+
+          <!-- settimana -->
+          <div class="week-strip">
+            <div class="day-chip">
+              <span class="dn">Lun</span><span class="dd">07</span>
+            </div>
+            <div class="day-chip">
+              <span class="dn">Mar</span><span class="dd">08</span>
+            </div>
+            <div class="day-chip">
+              <span class="dn">Mer</span><span class="dd">09</span>
+            </div>
+            <div class="day-chip today">
+              <span class="dn">Gio</span><span class="dd">10</span>
+              <div class="dot"></div>
+            </div>
+            <div class="day-chip">
+              <span class="dn">Ven</span><span class="dd">11</span>
+            </div>
+            <div class="day-chip">
+              <span class="dn">Sab</span><span class="dd">12</span>
+            </div>
+          </div>
+
+          <!-- programma -->
+          <div class="sch-list">
+            <div class="sch-item">
+              <div class="sch-time">10:00</div>
+              <div class="sch-block" style="background:#eff6ff;border-color:#2563eb">
+                <div class="sb-title">Stand-up settimanale</div>
+                <div class="sb-tag" style="background:#dbeafe;color:#2563eb">riunione</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">15 Apr</div>
+              <div class="sch-block" style="background:#eff6ff;border-color:#2563eb">
+                <div class="sb-title">Riunione mensile</div>
+                <div class="sb-tag" style="background:#dbeafe;color:#2563eb">riunione · 18:30</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">22 Apr</div>
+              <div class="sch-block" style="background:#f5f3ff;border-color:#7c3aed">
+                <div class="sb-title">Workshop Comunicazione</div>
+                <div class="sb-tag" style="background:#ede9fe;color:#7c3aed">workshop · 10:00</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">30 Apr</div>
+              <div class="sch-block" style="background:#fff1f2;border-color:#e11d48">
+                <div class="sb-title">Scadenza bilancio Q1</div>
+                <div class="sb-tag" style="background:#fecdd3;color:#e11d48">scadenza</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAB nuovo evento -->
+          <div style="display:flex;justify-content:flex-end;margin-top:auto">
+            <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,#2563eb,#06b6d4);color:#fff;font-size:10px;font-weight:800;padding:9px 14px;border-radius:12px;box-shadow:0 4px 14px rgba(37,99,235,.4)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8"><path d="M12 5v14M5 12h14"/></svg>
+              Nuovo evento
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- fine right-col -->
+
+</div><!-- fine scene -->
+</body>
+</html>

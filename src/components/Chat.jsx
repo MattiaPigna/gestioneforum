@@ -67,8 +67,9 @@ export default function Chat() {
   const canaleAttivo = canali.find(c => c.id === canaleCorrente);
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento chat...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento chat...
     </div>
   );
 

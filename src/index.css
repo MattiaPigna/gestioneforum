@@ -1,18 +1,19 @@
 @import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-html {
-  height: -webkit-fill-available;
-}
+/* ─── Reset & Base ─────────────────────────────── */
+html { height: -webkit-fill-available; }
 
 body {
   margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   background: linear-gradient(135deg, #f0f4ff 0%, #e8f5f0 100%);
+  background-attachment: fixed;
   min-height: 100vh;
   min-height: -webkit-fill-available;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  color: #1e293b;
 }
 
 #root {
@@ -21,31 +22,138 @@ body {
   min-height: -webkit-fill-available;
 }
 
-/* Scrollbar desktop */
-::-webkit-scrollbar { width: 5px; }
+/* ─── Scrollbar ─────────────────────────────────── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-/* Nascondi scrollbar su mobile ma mantieni lo scroll */
 @media (max-width: 1024px) {
   ::-webkit-scrollbar { display: none; }
   * { scrollbar-width: none; }
 }
 
-/* Transizioni fluide sulle card */
-.card-hover {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+/* ─── Design System ─────────────────────────────── */
+
+/* Sezione: contenitore pagina */
+.page { @apply space-y-6; }
+
+/* Header di pagina (titolo + pulsante azione) */
+.page-header {
+  @apply flex items-start justify-between gap-4;
 }
-.card-hover:hover {
-  box-shadow: 0 8px 30px rgba(37, 99, 235, 0.12);
-  transform: translateY(-1px);
+.page-title {
+  @apply text-2xl font-extrabold text-slate-800 leading-tight;
+}
+.page-subtitle {
+  @apply text-sm text-slate-400 font-medium mt-0.5;
 }
 
-/* Gradiente testo */
-.text-gradient {
-  background: linear-gradient(135deg, #2563eb, #0d9488);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+/* Card bianca standard */
+.card {
+  @apply bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden;
 }
+.card-body { @apply p-5; }
+.card-header {
+  @apply flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-50;
+}
+.card-title {
+  @apply flex items-center gap-2;
+}
+.card-title-icon {
+  @apply w-7 h-7 rounded-xl flex items-center justify-center shrink-0;
+}
+.card-title-text {
+  @apply font-bold text-slate-800 text-sm;
+}
+.card-link {
+  @apply text-xs text-blue-500 hover:text-blue-600 font-semibold flex items-center gap-1 transition-colors;
+}
+
+/* Label input */
+.form-label {
+  @apply text-xs font-bold text-slate-500 block mb-1.5 uppercase tracking-wide;
+}
+/* Input / Select / Textarea */
+.form-input {
+  @apply w-full border border-slate-200 bg-slate-50 rounded-2xl px-4 py-3 text-sm font-medium
+         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+         transition-all placeholder:text-slate-400;
+}
+.form-select {
+  @apply w-full border border-slate-200 bg-slate-50 rounded-2xl px-4 py-3 text-sm font-medium
+         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+         transition-all;
+}
+.form-textarea {
+  @apply w-full border border-slate-200 bg-slate-50 rounded-2xl px-4 py-3 text-sm font-medium
+         focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent
+         transition-all resize-none placeholder:text-slate-400;
+}
+
+/* Pulsanti */
+.btn-primary {
+  @apply flex items-center justify-center gap-2
+         bg-gradient-to-r from-blue-500 to-teal-500 text-white
+         px-5 py-2.5 rounded-2xl text-sm font-bold
+         shadow-lg shadow-blue-200/60
+         hover:opacity-90 active:scale-[.97] disabled:opacity-50
+         transition-all;
+}
+.btn-ghost {
+  @apply flex items-center justify-center gap-2
+         border border-slate-200 text-slate-600 bg-white
+         px-4 py-2.5 rounded-2xl text-sm font-semibold
+         hover:bg-slate-50 active:scale-[.97]
+         transition-all;
+}
+.btn-danger {
+  @apply flex items-center justify-center gap-2
+         bg-gradient-to-r from-rose-500 to-rose-600 text-white
+         px-4 py-2.5 rounded-2xl text-sm font-bold
+         shadow-lg shadow-rose-200/60
+         hover:opacity-90 active:scale-[.97]
+         transition-all;
+}
+
+/* Modal overlay */
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50
+         flex items-center justify-center p-4;
+}
+/* Modal card */
+.modal-card {
+  @apply bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl shadow-slate-300/40
+         border border-white/80 max-h-[90vh] overflow-y-auto;
+}
+.modal-header {
+  @apply flex items-center justify-between mb-5;
+}
+.modal-title {
+  @apply text-lg font-extrabold text-slate-800;
+}
+.modal-close {
+  @apply w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center
+         text-slate-500 hover:text-slate-700 hover:bg-slate-200 transition-colors;
+}
+
+/* Badge stato */
+.badge {
+  @apply text-xs px-2.5 py-0.5 rounded-full font-bold;
+}
+
+/* Loading state */
+.loading-screen {
+  @apply flex flex-col items-center justify-center py-32 text-slate-400 gap-3;
+}
+
+/* Hover row (liste) */
+.list-row {
+  @apply flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/70 transition-colors;
+}
+
+/* Sezione vuota */
+.empty-state {
+  @apply flex flex-col items-center justify-center py-12 text-slate-400 gap-2;
+}
+.empty-state svg { @apply opacity-30; }
+.empty-state p { @apply text-sm font-medium; }

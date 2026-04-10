@@ -26,8 +26,9 @@ export default function Statistiche() {
   }, []);
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento statistiche...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento statistiche...
     </div>
   );
 
@@ -85,7 +86,7 @@ export default function Statistiche() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-slate-800">Statistiche</h2>
+        <h2 className="page-title">Statistiche</h2>
         <p className="text-slate-500 mt-1">Panoramica attività del Forum</p>
       </div>
 

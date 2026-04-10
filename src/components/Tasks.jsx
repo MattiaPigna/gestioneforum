@@ -388,29 +388,28 @@ export default function Tasks() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento task...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento task...</p>
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="page">
+      <div className="page-header">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Task & Progetti</h2>
-          <p className="text-slate-500 mt-1">{tasks.filter(t => t.stato !== 'Done').length} aperti · {tasks.filter(t => t.stato === 'Done').length} completati</p>
+          <h2 className="page-title">Task & Progetti</h2>
+          <p className="page-subtitle">{tasks.filter(t => t.stato !== 'Done').length} aperti · {tasks.filter(t => t.stato === 'Done').length} completati</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex gap-1">
-            <button onClick={() => exportTasksCSV(tasks)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 font-medium">
-              <Download size={14} /> CSV
-            </button>
-            <button onClick={() => exportTasksPDF(tasks)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 font-medium">
-              <FileText size={14} /> PDF
-            </button>
-          </div>
+          <button onClick={() => exportTasksCSV(tasks)} className="btn-ghost px-3 py-2 text-xs">
+            <Download size={13} /> CSV
+          </button>
+          <button onClick={() => exportTasksPDF(tasks)} className="btn-ghost px-3 py-2 text-xs">
+            <FileText size={13} /> PDF
+          </button>
           {canEdit() && (
-            <button onClick={openAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">
+            <button onClick={openAdd} className="btn-primary">
               <Plus size={16} /> Nuovo Task
             </button>
           )}
@@ -418,50 +417,50 @@ export default function Tasks() {
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-800">{editId ? 'Modifica Task' : 'Nuovo Task'}</h3>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="modal-title">{editId ? 'Modifica Task' : 'Nuovo Task'}</h3>
+              <button onClick={() => setShowForm(false)} className="modal-close"><X size={16} /></button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Titolo *</label>
-                <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Titolo del task..." value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} />
+                <label className="form-label">Titolo *</label>
+                <input className="form-input" placeholder="Titolo del task..." value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Descrizione</label>
-                <textarea className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" rows={3} placeholder="Descrizione..." value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} />
+                <label className="form-label">Descrizione</label>
+                <textarea className="form-textarea" rows={3} placeholder="Descrizione..." value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Priorità</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.priorita} onChange={e => setForm(f => ({ ...f, priorita: e.target.value }))}>
+                  <label className="form-label">Priorità</label>
+                  <select className="form-select" value={form.priorita} onChange={e => setForm(f => ({ ...f, priorita: e.target.value }))}>
                     <option>Alta</option><option>Media</option><option>Bassa</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-slate-600 block mb-1">Stato</label>
-                  <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.stato} onChange={e => setForm(f => ({ ...f, stato: e.target.value }))}>
+                  <label className="form-label">Stato</label>
+                  <select className="form-select" value={form.stato} onChange={e => setForm(f => ({ ...f, stato: e.target.value }))}>
                     <option>To Do</option><option>In Progress</option><option>Done</option>
                   </select>
                 </div>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Assegnatario</label>
-                <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.assegnatario} onChange={e => setForm(f => ({ ...f, assegnatario: e.target.value }))}>
+                <label className="form-label">Assegnatario</label>
+                <select className="form-select" value={form.assegnatario} onChange={e => setForm(f => ({ ...f, assegnatario: e.target.value }))}>
                   <option value="">— Nessuno —</option>
                   {soci.map(s => <option key={s.id} value={s.nome}>{s.nome}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Scadenza</label>
-                <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.scadenza} onChange={e => setForm(f => ({ ...f, scadenza: e.target.value }))} />
+                <label className="form-label">Scadenza</label>
+                <input type="date" className="form-input" value={form.scadenza} onChange={e => setForm(f => ({ ...f, scadenza: e.target.value }))} />
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Annulla</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2">
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowForm(false)} className="btn-ghost flex-1">Annulla</button>
+              <button onClick={handleSave} disabled={saving} className="btn-primary flex-1">
                 {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                 {editId ? 'Salva modifiche' : 'Aggiungi'}
               </button>

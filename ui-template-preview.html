@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>App UI Template</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f0f4f8;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .scene {
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    max-width: 1200px;
+    width: 100%;
+  }
+
+  /* ─── AREA LANDING ─── */
+  .landing {
+    flex: 0 0 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  .kit-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #e8f0fe;
+    color: #2563eb;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 99px;
+    width: fit-content;
+  }
+  .landing h1 {
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+  .landing h1 span { color: #2563eb; }
+  .landing p {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.6;
+  }
+  .features { display: flex; flex-direction: column; gap: 10px; }
+  .feature {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: #334155;
+    font-weight: 500;
+  }
+  .feature .check {
+    width: 20px; height: 20px;
+    background: #2563eb;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .feature .check svg { display: block; }
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #2563eb;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 13px 24px;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(37,99,235,.35);
+    width: fit-content;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ─── SMARTPHONE GENERICO ─── */
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; }
+  .phone {
+    background: #fff;
+    border-radius: 40px;
+    box-shadow: 0 30px 80px rgba(15,23,42,.18), 0 0 0 2px #e2e8f0;
+    overflow: hidden;
+    position: relative;
+  }
+  .phone-main { width: 240px; height: 490px; }
+  .phone-sm   { width: 200px; height: 380px; border-radius: 32px; }
+
+  /* notch */
+  .notch {
+    width: 80px; height: 22px;
+    background: #0f172a;
+    border-radius: 0 0 16px 16px;
+    margin: 0 auto;
+    position: relative; z-index: 2;
+  }
+
+  /* ─── CONTENUTO SCHERMATA DASHBOARD ─── */
+  .screen { padding: 0; overflow: hidden; height: 100%; display: flex; flex-direction: column; }
+  .screen-inner { padding: 14px 16px; flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+
+  .dash-header { display: flex; align-items: center; justify-content: space-between; }
+  .dash-header h3 { font-size: 15px; font-weight: 800; color: #0f172a; }
+  .dash-header span { font-size: 10px; color: #94a3b8; display: block; margin-top: 1px; }
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 12px;
+    background: linear-gradient(135deg,#2563eb,#06b6d4);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 13px; font-weight: 800;
+  }
+
+  .search-bar {
+    display: flex; align-items: center; gap: 7px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    padding: 8px 12px;
+  }
+  .search-bar span { font-size: 10px; color: #94a3b8; }
+
+  .section-title { font-size: 11px; font-weight: 700; color: #0f172a; margin-bottom: 6px; }
+
+  .categories { display: flex; gap: 8px; overflow: hidden; }
+  .cat-card {
+    flex: 0 0 80px;
+    border-radius: 16px;
+    padding: 10px 8px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .cat-card .cat-icon {
+    width: 24px; height: 24px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    background: rgba(255,255,255,.35);
+    margin-bottom: 2px;
+  }
+  .cat-card .cat-name { font-size: 10px; font-weight: 700; color: #fff; }
+  .cat-card .cat-prog { font-size: 9px; color: rgba(255,255,255,.75); }
+  .cat-bar { width: 100%; height: 3px; background: rgba(255,255,255,.3); border-radius: 99px; margin-top: 3px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; background: #fff; border-radius: 99px; }
+
+  .task-list { display: flex; flex-direction: column; gap: 7px; flex: 1; }
+  .task-item {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 9px 10px;
+    display: flex; gap: 9px; align-items: flex-start;
+  }
+  .task-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-top: 3px; flex-shrink: 0;
+  }
+  .task-info { flex: 1; min-width: 0; }
+  .task-info .t-title { font-size: 11px; font-weight: 700; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .task-info .t-desc  { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+  .task-badge {
+    font-size: 8px; font-weight: 700;
+    padding: 2px 7px; border-radius: 99px;
+    flex-shrink: 0; margin-top: 1px;
+  }
+
+  /* nav bar */
+  .nav-bar {
+    display: flex; align-items: center; justify-content: space-around;
+    padding: 10px 8px 14px;
+    border-top: 1px solid #f1f5f9;
+    background: #fff;
+  }
+  .nav-icon { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .nav-icon svg { opacity: .4; }
+  .nav-icon.active svg { opacity: 1; }
+  .nav-dot { width: 4px; height: 4px; border-radius: 50%; background: #2563eb; }
+  .nav-add {
+    width: 38px; height: 38px;
+    background: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(37,99,235,.4);
+  }
+
+  /* ─── SCHERMATA DETTAGLIO ─── */
+  .detail-screen { padding: 0; height: 100%; display: flex; flex-direction: column; }
+  .detail-inner { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .detail-time { font-size: 10px; color: #94a3b8; display: flex; align-items: center; gap: 5px; }
+  .time-pill {
+    background: #eff6ff; color: #2563eb;
+    font-size: 9px; font-weight: 700;
+    padding: 3px 8px; border-radius: 99px;
+  }
+  .detail-title { font-size: 14px; font-weight: 800; color: #0f172a; line-height: 1.3; }
+  .detail-desc { font-size: 10px; color: #64748b; line-height: 1.5; }
+  .tags-grid { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag {
+    font-size: 9px; font-weight: 700;
+    padding: 3px 9px; border-radius: 99px;
+  }
+  .detail-cta {
+    background: #2563eb; color: #fff;
+    font-size: 11px; font-weight: 700;
+    border-radius: 12px; padding: 10px;
+    text-align: center;
+    box-shadow: 0 4px 14px rgba(37,99,235,.35);
+    margin-top: auto;
+  }
+
+  /* ─── SCHERMATA CALENDARIO ─── */
+  .cal-screen { padding: 0; height: 100%; display: flex; flex-direction: column; }
+  .cal-inner { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; }
+  .cal-header h4 { font-size: 13px; font-weight: 800; color: #0f172a; }
+  .week-row { display: flex; gap: 4px; }
+  .day-pill {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 6px 0;
+    border-radius: 10px;
+    background: #f8fafc;
+  }
+  .day-pill.active { background: #2563eb; }
+  .day-pill .d-name { font-size: 8px; font-weight: 600; color: #94a3b8; }
+  .day-pill.active .d-name { color: rgba(255,255,255,.75); }
+  .day-pill .d-num  { font-size: 11px; font-weight: 800; color: #1e293b; }
+  .day-pill.active .d-num  { color: #fff; }
+  .schedule { display: flex; flex-direction: column; gap: 7px; }
+  .sch-item { display: flex; gap: 8px; align-items: stretch; }
+  .sch-time { font-size: 8px; color: #94a3b8; width: 30px; flex-shrink: 0; padding-top: 2px; }
+  .sch-block {
+    flex: 1;
+    border-radius: 10px;
+    padding: 8px 9px;
+    border-left: 3px solid transparent;
+  }
+  .sch-block .sb-title { font-size: 10px; font-weight: 700; color: #1e293b; }
+  .sch-block .sb-desc  { font-size: 9px; color: #94a3b8; margin-top: 1px; }
+
+  /* Right column */
+  .right-col {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    align-items: flex-start;
+  }
+  .right-col .phone-sm:first-child { transform: translateX(-20px); }
+  .right-col .phone-sm:last-child  { transform: translateX(20px); }
+</style>
+</head>
+<body>
+
+<div class="scene">
+
+  <!-- ══════════ LANDING SINISTRA ══════════ -->
+  <div class="landing">
+    <div class="kit-badge">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+      UI Kit Gratuito
+    </div>
+    <div>
+      <h1>Il Tuo <span>Titolo</span><br>App Qui</h1>
+    </div>
+    <p>Descrizione breve dell'app UI Kit. Personalizza questo template per la tua app di produttività mobile.</p>
+    <div class="features">
+      <div class="feature">
+        <div class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        Caratteristica Principale 1
+      </div>
+      <div class="feature">
+        <div class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        Caratteristica Principale 2
+      </div>
+      <div class="feature">
+        <div class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        Caratteristica Principale 3
+      </div>
+      <div class="feature">
+        <div class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5"><path d="M5 13l4 4L19 7"/></svg></div>
+        Caratteristica Principale 4
+      </div>
+    </div>
+    <div class="cta-btn">
+      Pulsante UI Kit
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+    </div>
+  </div>
+
+  <!-- ══════════ SMARTPHONE CENTRALE — DASHBOARD ══════════ -->
+  <div class="phone-wrap">
+    <div class="phone phone-main">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="screen-inner">
+
+          <!-- Header -->
+          <div class="dash-header">
+            <div>
+              <h3>Ciao, Utente 👋</h3>
+              <span>Giovedì, 10 Aprile</span>
+            </div>
+            <div class="avatar">U</div>
+          </div>
+
+          <!-- Search -->
+          <div class="search-bar">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <span>Cerca compiti...</span>
+          </div>
+
+          <!-- Categorie -->
+          <div>
+            <div class="section-title">Categorie</div>
+            <div class="categories">
+              <div class="cat-card" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">
+                <div class="cat-icon">💼</div>
+                <div class="cat-name">Lavoro</div>
+                <div class="cat-prog">60% completato</div>
+                <div class="cat-bar"><div class="cat-bar-fill" style="width:60%"></div></div>
+              </div>
+              <div class="cat-card" style="background:linear-gradient(135deg,#06b6d4,#0891b2)">
+                <div class="cat-icon">🏠</div>
+                <div class="cat-name">Personale</div>
+                <div class="cat-prog">40% completato</div>
+                <div class="cat-bar"><div class="cat-bar-fill" style="width:40%"></div></div>
+              </div>
+              <div class="cat-card" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">
+                <div class="cat-icon">📚</div>
+                <div class="cat-name">Studio</div>
+                <div class="cat-prog">75% completato</div>
+                <div class="cat-bar"><div class="cat-bar-fill" style="width:75%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Task list -->
+          <div class="task-list">
+            <div class="section-title">Compiti Recenti</div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#2563eb"></div>
+              <div class="task-info">
+                <div class="t-title">Titolo del Compito Uno</div>
+                <div class="t-desc">Breve descrizione del compito...</div>
+              </div>
+              <div class="task-badge" style="background:#eff6ff;color:#2563eb">In Corso</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#f59e0b"></div>
+              <div class="task-info">
+                <div class="t-title">Titolo del Compito Due</div>
+                <div class="t-desc">Breve descrizione del compito...</div>
+              </div>
+              <div class="task-badge" style="background:#fffbeb;color:#d97706">In Attesa</div>
+            </div>
+            <div class="task-item">
+              <div class="task-dot" style="background:#10b981"></div>
+              <div class="task-info">
+                <div class="t-title">Titolo del Compito Tre</div>
+                <div class="t-desc">Breve descrizione del compito...</div>
+              </div>
+              <div class="task-badge" style="background:#f0fdf4;color:#059669">Completato</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Nav bar -->
+        <div class="nav-bar">
+          <div class="nav-icon active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#2563eb" stroke="none"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            <div class="nav-dot"></div>
+          </div>
+          <div class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          </div>
+          <div class="nav-icon">
+            <div class="nav-add">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            </div>
+          </div>
+          <div class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+          <div class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ COLONNA DESTRA ══════════ -->
+  <div class="right-col">
+
+    <!-- Schermata Dettaglio Compito -->
+    <div class="phone phone-sm">
+      <div class="detail-screen">
+        <div class="notch" style="width:60px;height:18px;border-radius:0 0 12px 12px;"></div>
+        <div class="detail-inner">
+          <div class="detail-time">
+            <div class="time-pill">09:00 AM</div>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M5 12h14"/></svg>
+            <div class="time-pill">11:30 AM</div>
+          </div>
+          <div class="detail-title">Titolo del<br>Compito Generico</div>
+          <div class="detail-desc">Testo di descrizione per il compito. Inserisci qui i dettagli e le informazioni rilevanti per completare questa attività.</div>
+          <div>
+            <div class="section-title" style="margin-bottom:7px">Etichette</div>
+            <div class="tags-grid">
+              <div class="tag" style="background:#eff6ff;color:#2563eb">Tag Uno</div>
+              <div class="tag" style="background:#f0fdf4;color:#059669">Tag Due</div>
+              <div class="tag" style="background:#fdf4ff;color:#7c3aed">Tag Tre</div>
+              <div class="tag" style="background:#fff7ed;color:#ea580c">Tag Quattro</div>
+              <div class="tag" style="background:#fefce8;color:#ca8a04">Tag Cinque</div>
+              <div class="tag" style="background:#f0f9ff;color:#0284c7">Tag Sei</div>
+            </div>
+          </div>
+          <div class="detail-cta">Crea Nuovo Compito</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schermata Calendario -->
+    <div class="phone phone-sm">
+      <div class="cal-screen">
+        <div class="notch" style="width:60px;height:18px;border-radius:0 0 12px 12px;"></div>
+        <div class="cal-inner">
+          <div class="cal-header">
+            <h4>Programma</h4>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </div>
+          <div class="week-row">
+            <div class="day-pill"><div class="d-name">Lun</div><div class="d-num">07</div></div>
+            <div class="day-pill"><div class="d-name">Mar</div><div class="d-num">08</div></div>
+            <div class="day-pill"><div class="d-name">Mer</div><div class="d-num">09</div></div>
+            <div class="day-pill active"><div class="d-name">Gio</div><div class="d-num">10</div></div>
+            <div class="day-pill"><div class="d-name">Ven</div><div class="d-num">11</div></div>
+            <div class="day-pill"><div class="d-name">Sab</div><div class="d-num">12</div></div>
+          </div>
+          <div class="schedule">
+            <div class="sch-item">
+              <div class="sch-time">09:00</div>
+              <div class="sch-block" style="background:#eff6ff;border-color:#2563eb">
+                <div class="sb-title">Compito Pianificato Uno</div>
+                <div class="sb-desc">Descrizione segnaposto...</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">11:30</div>
+              <div class="sch-block" style="background:#f0fdf4;border-color:#10b981">
+                <div class="sb-title">Compito Pianificato Due</div>
+                <div class="sb-desc">Descrizione segnaposto...</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">14:00</div>
+              <div class="sch-block" style="background:#fdf4ff;border-color:#8b5cf6">
+                <div class="sb-title">Compito in Evidenza</div>
+                <div class="sb-desc">Blocco di orario evidenziato...</div>
+              </div>
+            </div>
+            <div class="sch-item">
+              <div class="sch-time">16:30</div>
+              <div class="sch-block" style="background:#fff7ed;border-color:#f59e0b">
+                <div class="sb-title">Compito Pianificato Tre</div>
+                <div class="sb-desc">Descrizione segnaposto...</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- fine right-col -->
+
+</div><!-- fine scene -->
+
+</body>
+</html>

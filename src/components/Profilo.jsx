@@ -59,7 +59,7 @@ export default function Profilo() {
   );
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
+    <div className="loading-screen">
       <Loader2 size={24} className="animate-spin mr-2" />
     </div>
   );
@@ -69,7 +69,7 @@ export default function Profilo() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <h2 className="text-2xl font-bold text-slate-800">Il mio Profilo</h2>
+      <h2 className="page-title">Il mio Profilo</h2>
 
       {/* Card profilo */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">

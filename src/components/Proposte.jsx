@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ThumbsUp, ThumbsDown, MessageCircle, Plus, X, ChevronDown, ChevronUp, Send, Loader2, Trash2 } from 'lucide-react';
+import { ThumbsUp, ThumbsDown, MessageCircle, Plus, X, ChevronDown, ChevronUp, Send, Loader2, Trash2, Vote } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { sendPush } from '../lib/push';
@@ -184,43 +184,44 @@ export default function Proposte() {
   };
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento proposte...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento proposte...</p>
     </div>
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="page">
+      <div className="page-header">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Proposte & Votazioni</h2>
-          <p className="text-slate-500 mt-1">{proposte.length} proposte attive</p>
+          <h2 className="page-title">Proposte & Votazioni</h2>
+          <p className="page-subtitle">{proposte.length} proposte attive</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">
+        <button onClick={() => setShowForm(true)} className="btn-primary">
           <Plus size={16} /> Nuova Proposta
         </button>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-800">Nuova Proposta</h3>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="modal-title">Nuova Proposta</h3>
+              <button onClick={() => setShowForm(false)} className="modal-close"><X size={16} /></button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Titolo *</label>
-                <input className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Titolo della proposta..." value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} />
+                <label className="form-label">Titolo *</label>
+                <input className="form-input" placeholder="Titolo della proposta..." value={form.titolo} onChange={e => setForm(f => ({ ...f, titolo: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Descrizione</label>
-                <textarea className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none" rows={4} placeholder="Descrivi la tua proposta..." value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} />
+                <label className="form-label">Descrizione</label>
+                <textarea className="form-textarea" rows={4} placeholder="Descrivi la tua proposta..." value={form.descrizione} onChange={e => setForm(f => ({ ...f, descrizione: e.target.value }))} />
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Annulla</button>
-              <button onClick={handleAdd} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2">
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowForm(false)} className="btn-ghost flex-1">Annulla</button>
+              <button onClick={handleAdd} disabled={saving} className="btn-primary flex-1">
                 {saving && <Loader2 size={14} className="animate-spin" />} Pubblica
               </button>
             </div>
@@ -231,9 +232,10 @@ export default function Proposte() {
       <div className="space-y-4">
         {proposte.map(p => <PropostaCard key={p.id} proposta={p} onVote={handleVote} onDelete={handleDelete} />)}
         {proposte.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-            <p className="font-medium">Nessuna proposta ancora</p>
-            <p className="text-sm mt-1">Crea la prima proposta!</p>
+          <div className="empty-state">
+            <Vote size={28} />
+            <p>Nessuna proposta ancora</p>
+            <p className="text-sm text-slate-400">Crea la prima proposta!</p>
           </div>
         )}
       </div>

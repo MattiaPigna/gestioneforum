@@ -108,8 +108,9 @@ export default function GestioneRuoli() {
   const getColorClass = (colore) => colori.find(c => c.key === colore)?.cls || colori[0].cls;
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento ruoli...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento ruoli...
     </div>
   );
 
@@ -119,7 +120,7 @@ export default function GestioneRuoli() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Gestione Ruoli</h2>
+          <h2 className="page-title">Gestione Ruoli</h2>
           <p className="text-slate-500 mt-1">Configura ruoli e permessi per le sezioni</p>
         </div>
       </div>

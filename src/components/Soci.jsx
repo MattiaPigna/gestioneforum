@@ -120,8 +120,9 @@ export default function Soci() {
   );
 
   if (loading) return (
-    <div className="flex items-center justify-center py-32 text-slate-400">
-      <Loader2 size={24} className="animate-spin mr-2" /> Caricamento soci...
+    <div className="loading-screen">
+      <Loader2 size={28} className="animate-spin text-blue-400" />
+      <p>Caricamento soci...</p>
     </div>
   );
 
@@ -133,60 +134,51 @@ export default function Soci() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="page">
+      <div className="page-header">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Anagrafica Soci</h2>
-          <p className="text-slate-500 mt-1">{soci.length} soci registrati</p>
+          <h2 className="page-title">Anagrafica Soci</h2>
+          <p className="page-subtitle">{soci.length} soci registrati</p>
         </div>
         <div className="flex gap-2">
-          <div className="flex gap-1">
-            <button onClick={() => exportSociCSV(soci)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 font-medium">
-              <Download size={14} /> CSV
-            </button>
-            <button onClick={() => exportSociPDF(soci)} className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 font-medium">
-              <FileText size={14} /> PDF
-            </button>
-          </div>
+          <button onClick={() => exportSociCSV(soci)} className="btn-ghost px-3 py-2 text-xs"><Download size={13} /> CSV</button>
+          <button onClick={() => exportSociPDF(soci)} className="btn-ghost px-3 py-2 text-xs"><FileText size={13} /> PDF</button>
           {canEdit() && (
-            <button onClick={openAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-teal-500 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg hover:scale-105 transition-all">
-              <Plus size={16} /> Nuovo Socio
-            </button>
+            <button onClick={openAdd} className="btn-primary"><Plus size={16} /> Nuovo Socio</button>
           )}
         </div>
       </div>
 
-      {/* Modal aggiunta / modifica */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-slate-800">{editSocio ? 'Modifica Socio' : 'Nuovo Socio'}</h3>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600"><X size={18} /></button>
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3 className="modal-title">{editSocio ? 'Modifica Socio' : 'Nuovo Socio'}</h3>
+              <button onClick={() => setShowForm(false)} className="modal-close"><X size={16} /></button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Nome e Cognome *</label>
-                <input type="text" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="Es. Mario Rossi" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
+                <label className="form-label">Nome e Cognome *</label>
+                <input type="text" className="form-input" placeholder="Es. Mario Rossi" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Email</label>
-                <input type="email" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" placeholder="mario.rossi@forum.it" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+                <label className="form-label">Email</label>
+                <input type="email" className="form-input" placeholder="mario.rossi@forum.it" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Ruolo</label>
-                <select className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.ruolo} onChange={e => setForm(f => ({ ...f, ruolo: e.target.value }))}>
+                <label className="form-label">Ruolo</label>
+                <select className="form-select" value={form.ruolo} onChange={e => setForm(f => ({ ...f, ruolo: e.target.value }))}>
                   {ruoliDB.map(r => <option key={r.id} value={r.nome}>{r.nome}</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-xs font-medium text-slate-600 block mb-1">Data iscrizione</label>
-                <input type="date" className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={form.iscrizione} onChange={e => setForm(f => ({ ...f, iscrizione: e.target.value }))} />
+                <label className="form-label">Data iscrizione</label>
+                <input type="date" className="form-input" value={form.iscrizione} onChange={e => setForm(f => ({ ...f, iscrizione: e.target.value }))} />
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50">Annulla</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-teal-500 text-white text-sm font-medium hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2">
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowForm(false)} className="btn-ghost flex-1">Annulla</button>
+              <button onClick={handleSave} disabled={saving} className="btn-primary flex-1">
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 {editSocio ? 'Salva modifiche' : 'Aggiungi'}
               </button>
