@@ -86,13 +86,16 @@ export default function Calendario() {
     if (celle.length > 42) break;
   }
 
+  const toLocalDateStr = (d) =>
+    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
   const eventiDelGiorno = (data) => {
-    const d = data.toISOString().split('T')[0];
+    const d = toLocalDateStr(data);
     return eventi.filter(e => e.data === d);
   };
 
   const taskDelGiorno = (data) => {
-    const d = data.toISOString().split('T')[0];
+    const d = toLocalDateStr(data);
     return tasks.filter(t => t.scadenza === d);
   };
 
@@ -107,8 +110,8 @@ export default function Calendario() {
     setTasks(prev => prev.filter(t => t.id !== id));
   };
 
-  const prossimiEventi = eventi.filter(e => new Date(e.data) >= oggi).slice(0, 5);
-  const oggi_str = oggi.toISOString().split('T')[0];
+  const oggi_str = toLocalDateStr(oggi);
+  const prossimiEventi = eventi.filter(e => e.data >= oggi_str).slice(0, 5);
   const taskCalendario = tasks
     .filter(t => t.scadenza)
     .sort((a, b) => a.scadenza.localeCompare(b.scadenza))

@@ -42,6 +42,11 @@ export async function initPush(socioId, log = () => {}) {
 
     log('Salvataggio subscription su DB...');
     const sub = subscription.toJSON();
+    // Rimuovi vecchie subscription di questo socio con endpoint diverso (evita doppie notifiche)
+    await supabase.from('push_subscriptions')
+      .delete()
+      .eq('socio_id', socioId)
+      .neq('endpoint', sub.endpoint);
     const { error } = await supabase.from('push_subscriptions').upsert(
       { socio_id: socioId, endpoint: sub.endpoint, subscription: sub },
       { onConflict: 'endpoint' }
