@@ -13,9 +13,15 @@ export default function UpdateBanner() {
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
 
-    // Quando il controller cambia (nuovo SW ha preso il controllo) mostra il banner
-    const onControllerChange = () => setShowBanner(true);
+    // Quando il controller cambia (nuovo SW ha preso il controllo) ricarica automaticamente
+    const onControllerChange = () => window.location.reload();
     navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+
+    // Ascolta il messaggio SW_UPDATED dal service worker → ricarica automaticamente
+    const onMessage = (event) => {
+      if (event.data?.type === 'SW_UPDATED') window.location.reload();
+    };
+    navigator.serviceWorker.addEventListener('message', onMessage);
 
     // Controlla anche se c'è già un SW in waiting al mount
     navigator.serviceWorker.ready.then(reg => {
@@ -40,6 +46,7 @@ export default function UpdateBanner() {
 
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+      navigator.serviceWorker.removeEventListener('message', onMessage);
       clearInterval(interval);
     };
   }, []);

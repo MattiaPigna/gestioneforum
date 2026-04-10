@@ -5,7 +5,16 @@ import { ExpirationPlugin } from 'workbox-expiration';
 
 // Prende il controllo subito, senza aspettare che le vecchie tab si chiudano
 self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    self.clients.claim().then(() => {
+      // Dopo aver preso il controllo, avvisa tutte le tab di ricaricare
+      return self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+        clients.forEach(client => client.postMessage({ type: 'SW_UPDATED' }));
+      });
+    })
+  );
+});
 
 // Precache assets generati da vite-plugin-pwa
 cleanupOutdatedCaches();
