@@ -278,6 +278,18 @@ export default function Tasks() {
 
   useEffect(() => {
     Promise.all([fetchTasks(), fetchSoci(), fetchEventi()]);
+
+    // Realtime: aggiorna tasks in tempo reale per tutti gli utenti
+    const channel = supabase.channel('tasks-realtime')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tasks' },
+        (payload) => setTasks(prev => prev.find(t => t.id === payload.new.id) ? prev : [payload.new, ...prev]))
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tasks' },
+        (payload) => setTasks(prev => prev.map(t => t.id === payload.new.id ? payload.new : t)))
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tasks' },
+        (payload) => setTasks(prev => prev.filter(t => t.id !== payload.old.id)))
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, []);
 
   const fetchTasks = async () => {

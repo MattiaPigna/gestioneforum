@@ -136,9 +136,12 @@ export default function Proposte() {
 
   useEffect(() => { fetchProposte(); }, []);
 
+  const getStoredVote = (id) => localStorage.getItem(`vote-${nomeUtente}-${id}`);
+  const setStoredVote = (id, v) => v ? localStorage.setItem(`vote-${nomeUtente}-${id}`, v) : localStorage.removeItem(`vote-${nomeUtente}-${id}`);
+
   const fetchProposte = async () => {
     const { data } = await supabase.from('proposte').select('*').order('created_at', { ascending: false });
-    if (data) setProposte(data.map(p => ({ ...p, userVote: null })));
+    if (data) setProposte(data.map(p => ({ ...p, userVote: getStoredVote(p.id) })));
     setLoading(false);
   };
 
@@ -151,6 +154,7 @@ export default function Proposte() {
     if (tipo === 'up') { newUp = wasUp ? upvotes - 1 : upvotes + 1; if (wasDown) newDown = downvotes - 1; newVote = wasUp ? null : 'up'; }
     else { newDown = wasDown ? downvotes - 1 : downvotes + 1; if (wasUp) newUp = upvotes - 1; newVote = wasDown ? null : 'down'; }
     await supabase.from('proposte').update({ upvotes: newUp, downvotes: newDown }).eq('id', id);
+    setStoredVote(id, newVote);
     setProposte(prev => prev.map(p => p.id === id ? { ...p, upvotes: newUp, downvotes: newDown, userVote: newVote } : p));
   };
 

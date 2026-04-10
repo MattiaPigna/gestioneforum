@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Bell, X } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Bell, X, RefreshCw } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import NotificationSetup from './components/NotificationSetup';
 import Login from './components/Login';
@@ -120,12 +120,79 @@ function NotifichePanel({ open, onClose, notifiche, onRead, ultimaLetta }) {
   );
 }
 
+// ── Notifica scadenza task (controlla all'avvio) ─────────────────────────
+function useScadenzaCheck() {
+  useEffect(() => {
+    const check = async () => {
+      const domani = new Date();
+      domani.setDate(domani.getDate() + 1);
+      const domaniStr = `${domani.getFullYear()}-${String(domani.getMonth()+1).padStart(2,'0')}-${String(domani.getDate()).padStart(2,'0')}`;
+      const { data } = await supabase.from('tasks').select('id, titolo, assegnatario').eq('scadenza', domaniStr).neq('stato', 'Done');
+      if (!data?.length) return;
+      data.forEach(task => {
+        const key = `scad-notif-${task.id}-${domaniStr}`;
+        if (localStorage.getItem(key)) return; // già notificato oggi
+        localStorage.setItem(key, '1');
+        import('./lib/push').then(({ sendPush }) => sendPush({
+          title: `⏰ Scadenza domani: ${task.titolo}`,
+          body: task.assegnatario ? `Assegnato a ${task.assegnatario}` : 'Nessun assegnatario',
+          url: '/',
+        }));
+      });
+    };
+    const t = setTimeout(check, 3000); // aspetta 3s dopo il login
+    return () => clearTimeout(t);
+  }, []);
+}
+
+// ── Pull to refresh ───────────────────────────────────────────────────────
+function usePullToRefresh(onRefresh) {
+  const [pulling, setPulling] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const startY = useRef(0);
+  const mainRef = useRef(null);
+
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const onTouchStart = (e) => { startY.current = e.touches[0].clientY; };
+    const onTouchEnd = async (e) => {
+      const diff = e.changedTouches[0].clientY - startY.current;
+      if (diff > 80 && el.scrollTop === 0) {
+        setPulling(false);
+        setRefreshing(true);
+        await onRefresh();
+        setRefreshing(false);
+      } else {
+        setPulling(false);
+      }
+    };
+    const onTouchMove = (e) => {
+      if (el.scrollTop === 0 && e.touches[0].clientY - startY.current > 20) setPulling(true);
+    };
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [onRefresh]);
+
+  return { mainRef, pulling, refreshing };
+}
+
 function AppInner() {
   const { user, loading, isPresidente, socio } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { notifiche, nonLette, segnaLette, ultimaLetta } = useNotifiche();
+  useScadenzaCheck();
+  const doRefresh = useCallback(() => new Promise(r => { setRefreshKey(k => k + 1); setTimeout(r, 600); }), []);
+  const { mainRef, pulling, refreshing } = usePullToRefresh(doRefresh);
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-3" style={{ background: 'linear-gradient(135deg,#f0f4ff,#e8f5f0)' }}>
@@ -144,19 +211,20 @@ function AppInner() {
   if (!user) return <Login />;
 
   const renderSection = () => {
+    const k = refreshKey;
     switch (activeSection) {
-      case 'dashboard':   return <Dashboard onNavigate={setActiveSection} />;
-      case 'calendario':  return <Calendario />;
-      case 'tasks':       return <Tasks />;
-      case 'proposte':    return <Proposte />;
-      case 'chat':        return <Chat />;
-      case 'drive':       return <Drive />;
-      case 'soci':        return <Soci />;
-      case 'finanze':     return <Finanze />;
-      case 'statistiche': return <Statistiche />;
-      case 'profilo':     return <Profilo />;
-      case 'ruoli':       return isPresidente() ? <GestioneRuoli /> : <Dashboard onNavigate={setActiveSection} />;
-      default:            return <Dashboard onNavigate={setActiveSection} />;
+      case 'dashboard':   return <Dashboard key={k} onNavigate={setActiveSection} />;
+      case 'calendario':  return <Calendario key={k} />;
+      case 'tasks':       return <Tasks key={k} />;
+      case 'proposte':    return <Proposte key={k} />;
+      case 'chat':        return <Chat key={k} />;
+      case 'drive':       return <Drive key={k} />;
+      case 'soci':        return <Soci key={k} />;
+      case 'finanze':     return <Finanze key={k} />;
+      case 'statistiche': return <Statistiche key={k} />;
+      case 'profilo':     return <Profilo key={k} />;
+      case 'ruoli':       return isPresidente() ? <GestioneRuoli key={k} /> : <Dashboard key={k} onNavigate={setActiveSection} />;
+      default:            return <Dashboard key={k} onNavigate={setActiveSection} />;
     }
   };
 
@@ -229,7 +297,16 @@ function AppInner() {
         </header>
 
         {/* ── Main content ── */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-24 lg:pb-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto p-3 sm:p-6 pb-24 lg:pb-8">
+          {/* Pull to refresh indicator */}
+          {(pulling || refreshing) && (
+            <div className="flex justify-center mb-3 -mt-1">
+              <div className="bg-white rounded-full shadow-md px-4 py-2 flex items-center gap-2 text-xs font-semibold text-slate-500 border border-slate-100">
+                <RefreshCw size={13} className={refreshing ? 'animate-spin text-blue-500' : 'text-slate-400'} />
+                {refreshing ? 'Aggiornamento...' : 'Rilascia per aggiornare'}
+              </div>
+            </div>
+          )}
           {renderSection()}
         </main>
 
