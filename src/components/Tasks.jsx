@@ -28,101 +28,199 @@ const statoBtns = [
   { stato: 'Annullata',   icon: Ban,          cls: 'bg-rose-50 text-rose-500 hover:bg-rose-100',        activeCls: 'bg-rose-400 text-white' },
 ];
 
-function TaskCard({ task, eventi, onDelete, onEdit, onChangeStato }) {
-  const [expanded, setExpanded] = useState(false);
+// Bottom sheet di anteprima task (mobile)
+function TaskPreviewSheet({ task, eventi, onClose, onEdit, onDelete, onChangeStato }) {
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const eventoCollegato = eventi.find(e => e.id === task.evento_id);
   const isDone = task.stato === 'Done';
   const isAnnullata = task.stato === 'Annullata';
 
   return (
-    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all`}>
-      {/* Contenuto card — tap su mobile per espandere */}
+    <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
+      {/* Overlay scuro */}
+      <div className="absolute inset-0 bg-black/40" />
+      {/* Sheet */}
       <div
-        className="p-4 cursor-pointer select-none"
-        onClick={() => setExpanded(e => !e)}
+        className="relative w-full bg-white rounded-t-3xl shadow-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-2">
-          <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
-          {/* Pulsanti piccoli visibili solo su desktop */}
-          <div className="hidden md:flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-            <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors p-0.5">
-              <Pencil size={13} />
-            </button>
-            <button onClick={() => onDelete(task.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-0.5">
-              <Trash2 size={13} />
-            </button>
+        {/* Handle bar */}
+        <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto -mt-1 mb-1" />
+
+        {/* Header: titolo + badge priorità */}
+        <div className="flex items-start gap-3">
+          <div className={`w-1 self-stretch rounded-full ${p.border.replace('border-l-', 'bg-')}`} />
+          <div className="flex-1">
+            <h3 className={`text-base font-bold leading-snug ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+              {task.titolo}
+            </h3>
+            <div className="flex items-center gap-2 mt-1 flex-wrap">
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statoConfig[task.stato]?.badge}`}>{task.stato}</span>
+            </div>
           </div>
-          {/* Indicatore espansione su mobile */}
-          <div className="md:hidden text-slate-300 shrink-0 transition-transform" style={{ transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
-          </div>
+          <button onClick={onClose} className="text-slate-400 p-1"><X size={20} /></button>
         </div>
-        {task.descrizione && (
-          <p className={`text-xs text-slate-500 mt-1.5 ${expanded ? '' : 'line-clamp-2'}`}>{task.descrizione}</p>
+
+        {/* Descrizione */}
+        {task.descrizione ? (
+          <p className="text-sm text-slate-600 leading-relaxed">{task.descrizione}</p>
+        ) : (
+          <p className="text-sm text-slate-400 italic">Nessuna descrizione</p>
         )}
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+
+        {/* Meta info */}
+        <div className="flex flex-wrap gap-3 text-xs text-slate-500">
           {task.scadenza && (
-            <div className="flex items-center gap-1">
-              <Clock size={10} className="text-slate-400" />
-              <span className="text-xs text-slate-400">{task.scadenza}</span>
+            <div className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-3 py-2">
+              <Clock size={13} className="text-slate-400" />
+              <span>Scadenza: <strong>{task.scadenza}</strong></span>
             </div>
           )}
           {task.assegnatario && (
-            <div className="flex items-center gap-1 ml-auto">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-3 py-2">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
                 <span className="text-white text-[9px] font-bold">{task.assegnatario.split(' ').map(n => n[0]).join('')}</span>
               </div>
-              <span className="text-xs text-slate-400">{task.assegnatario.split(' ')[0]}</span>
+              <span>{task.assegnatario}</span>
+            </div>
+          )}
+          {eventoCollegato && (
+            <div className="flex items-center gap-1.5 bg-blue-50 rounded-lg px-3 py-2">
+              <span>📅 {eventoCollegato.titolo}</span>
             </div>
           )}
         </div>
-        {eventoCollegato && (
-          <div className="mt-2 flex items-center gap-1 bg-blue-50 rounded-lg px-2 py-1">
-            <span className="text-[10px] text-blue-600 font-medium">📅 {eventoCollegato.titolo}</span>
+
+        {/* Pulsanti stato */}
+        {onChangeStato && (
+          <div className="grid grid-cols-4 gap-2">
+            {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
+              const isActive = task.stato === stato;
+              return (
+                <button
+                  key={stato}
+                  onClick={() => { onChangeStato(task, stato); onClose(); }}
+                  disabled={isActive}
+                  className={`flex flex-col items-center justify-center py-3 gap-1 rounded-xl text-[11px] font-semibold transition-all ${isActive ? activeCls : cls}`}
+                >
+                  <Icon size={16} />
+                  <span>{stato === 'In Progress' ? 'In corso' : stato}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pulsanti Modifica / Elimina */}
+        {onChangeStato && (
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => { onEdit(task); onClose(); }}
+              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-blue-500 text-white font-bold text-base shadow-lg active:scale-95 transition-all"
+            >
+              <Pencil size={20} /> Modifica
+            </button>
+            <button
+              onClick={() => { onDelete(task.id); onClose(); }}
+              className="flex-1 flex items-center justify-center gap-2 py-4 rounded-2xl bg-rose-500 text-white font-bold text-base shadow-lg active:scale-95 transition-all"
+            >
+              <Trash2 size={20} /> Elimina
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TaskCard({ task, eventi, onDelete, onEdit, onChangeStato }) {
+  const [showPreview, setShowPreview] = useState(false);
+  const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
+  const eventoCollegato = eventi.find(e => e.id === task.evento_id);
+  const isDone = task.stato === 'Done';
+  const isAnnullata = task.stato === 'Annullata';
+
+  return (
+    <>
+      <div
+        className={`bg-white rounded-xl shadow-sm border border-slate-100 border-l-4 ${p.border} hover:shadow-md transition-all md:cursor-default cursor-pointer active:scale-[0.98]`}
+        onClick={() => setShowPreview(true)}
+      >
+        {/* Contenuto card */}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className={`text-sm font-semibold leading-snug flex-1 ${isDone || isAnnullata ? 'line-through text-slate-400' : 'text-slate-800'}`}>{task.titolo}</h4>
+            {/* Pulsanti piccoli visibili solo su desktop */}
+            <div className="hidden md:flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+              <button onClick={() => onEdit(task)} className="text-slate-300 hover:text-blue-500 transition-colors p-0.5">
+                <Pencil size={13} />
+              </button>
+              <button onClick={() => onDelete(task.id)} className="text-slate-300 hover:text-rose-500 transition-colors p-0.5">
+                <Trash2 size={13} />
+              </button>
+            </div>
+          </div>
+          {task.descrizione && <p className="text-xs text-slate-500 mt-1.5 line-clamp-2">{task.descrizione}</p>}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${p.color}`}>{task.priorita}</span>
+            {task.scadenza && (
+              <div className="flex items-center gap-1">
+                <Clock size={10} className="text-slate-400" />
+                <span className="text-xs text-slate-400">{task.scadenza}</span>
+              </div>
+            )}
+            {task.assegnatario && (
+              <div className="flex items-center gap-1 ml-auto">
+                <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                  <span className="text-white text-[9px] font-bold">{task.assegnatario.split(' ').map(n => n[0]).join('')}</span>
+                </div>
+                <span className="text-xs text-slate-400">{task.assegnatario.split(' ')[0]}</span>
+              </div>
+            )}
+          </div>
+          {eventoCollegato && (
+            <div className="mt-2 flex items-center gap-1 bg-blue-50 rounded-lg px-2 py-1">
+              <span className="text-[10px] text-blue-600 font-medium">📅 {eventoCollegato.titolo}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Pulsanti stato — solo desktop */}
+        {onChangeStato && (
+          <div className="hidden md:grid grid-cols-4 border-t border-slate-100 rounded-b-xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
+              const isActive = task.stato === stato;
+              return (
+                <button
+                  key={stato}
+                  onClick={() => onChangeStato(task, stato)}
+                  disabled={isActive}
+                  className={`flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-semibold transition-all ${isActive ? activeCls : cls}`}
+                >
+                  <Icon size={14} />
+                  <span className="leading-none">{stato === 'In Progress' ? 'In corso' : stato}</span>
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Pulsanti Modifica / Elimina — solo mobile, visibili quando espanso */}
-      {expanded && onChangeStato && (
-        <div className="md:hidden flex gap-3 px-4 pb-4" onClick={e => e.stopPropagation()}>
-          <button
-            onClick={() => { onEdit(task); setExpanded(false); }}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-500 text-white font-semibold text-sm shadow-md active:scale-95 transition-all"
-          >
-            <Pencil size={18} /> Modifica
-          </button>
-          <button
-            onClick={() => { onDelete(task.id); setExpanded(false); }}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-rose-500 text-white font-semibold text-sm shadow-md active:scale-95 transition-all"
-          >
-            <Trash2 size={18} /> Elimina
-          </button>
+      {/* Bottom sheet anteprima — solo mobile */}
+      {showPreview && (
+        <div className="md:hidden">
+          <TaskPreviewSheet
+            task={task}
+            eventi={eventi}
+            onClose={() => setShowPreview(false)}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onChangeStato={onChangeStato}
+          />
         </div>
       )}
-
-      {/* Pulsanti stato */}
-      {onChangeStato && (
-        <div className="grid grid-cols-4 border-t border-slate-100 rounded-b-xl overflow-hidden">
-          {statoBtns.map(({ stato, icon: Icon, cls, activeCls }) => {
-            const isActive = task.stato === stato;
-            return (
-              <button
-                key={stato}
-                onClick={() => onChangeStato(task, stato)}
-                disabled={isActive}
-                className={`flex flex-col items-center justify-center py-2.5 gap-1 text-[10px] font-semibold transition-all ${isActive ? activeCls : cls}`}
-              >
-                <Icon size={14} />
-                <span className="leading-none">{stato === 'In Progress' ? 'In corso' : stato}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
