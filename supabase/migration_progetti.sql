@@ -1,5 +1,5 @@
 -- ================================================================
--- MIGRAZIONE: Tabella progetti + colonna progetto_id in tasks
+-- MIGRAZIONE: Tabella progetti + colonna progetto_id in tasks e finanze
 -- Da eseguire nel SQL Editor di Supabase
 -- ================================================================
 
@@ -20,6 +20,11 @@ CREATE TABLE IF NOT EXISTS public.progetti (
 
 -- 2. Aggiungi progetto_id alla tabella tasks (nullable → task generale se NULL)
 ALTER TABLE public.tasks
+  ADD COLUMN IF NOT EXISTS progetto_id uuid
+  REFERENCES public.progetti(id) ON DELETE SET NULL;
+
+-- 3. Aggiungi progetto_id alla tabella finanze (per collegare le uscite al budget progetto)
+ALTER TABLE public.finanze
   ADD COLUMN IF NOT EXISTS progetto_id uuid
   REFERENCES public.progetti(id) ON DELETE SET NULL;
 
