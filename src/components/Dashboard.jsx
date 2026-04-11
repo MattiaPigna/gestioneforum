@@ -65,6 +65,7 @@ export default function Dashboard({ onNavigate }) {
       iconColor: 'text-blue-500',
       cardBg: 'bg-white',
       accent: 'border-t-blue-500',
+      navigate: 'soci',
     },
     {
       label: 'Task Aperti',
@@ -75,6 +76,7 @@ export default function Dashboard({ onNavigate }) {
       iconColor: 'text-teal-500',
       cardBg: 'bg-white',
       accent: 'border-t-teal-500',
+      navigate: 'tasks',
     },
     {
       label: 'Proposte',
@@ -85,6 +87,7 @@ export default function Dashboard({ onNavigate }) {
       iconColor: 'text-violet-500',
       cardBg: 'bg-white',
       accent: 'border-t-violet-500',
+      navigate: 'proposte',
     },
     {
       label: 'Urgenti',
@@ -95,6 +98,7 @@ export default function Dashboard({ onNavigate }) {
       iconColor: 'text-rose-500',
       cardBg: 'bg-white',
       accent: 'border-t-rose-500',
+      navigate: 'tasks',
     },
   ];
 
@@ -115,14 +119,14 @@ export default function Dashboard({ onNavigate }) {
 
       {/* ── Stat cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {stats.map(({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, accent }) => (
-          <div key={label}
-            className={`${cardBg} rounded-2xl p-4 shadow-sm border border-slate-100 border-t-2 ${accent} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200`}>
+        {stats.map(({ label, value, sub, icon: Icon, iconBg, iconColor, cardBg, accent, navigate }) => (
+          <div key={label} onClick={() => onNavigate(navigate)}
+            className={`${cardBg} rounded-2xl p-4 shadow-sm border border-slate-100 border-t-2 ${accent} hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}>
             <div className="flex items-start justify-between mb-3">
               <div className={`${iconBg} w-9 h-9 rounded-xl flex items-center justify-center`}>
                 <Icon size={17} className={iconColor} />
               </div>
-              <ArrowUpRight size={14} className="text-slate-300" />
+              <ArrowUpRight size={14} className="text-slate-400" />
             </div>
             <p className="text-2xl font-extrabold text-slate-800 leading-none">{value}</p>
             <p className="text-sm font-semibold text-slate-600 mt-1">{label}</p>
