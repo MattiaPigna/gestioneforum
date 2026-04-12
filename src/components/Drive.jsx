@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Sheet, Folder, Presentation, ExternalLink, Search, Filter, Plus, X, Loader2, Trash2, Link, Upload, CloudUpload, CheckCircle2, AlertCircle } from 'lucide-react';
-import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
-const DRIVE_FUNC_URL = `${SUPABASE_URL}/functions/v1/upload-drive`;
+const BUCKET = 'drive-files';
 
 const tipoConfig = {
   pdf:    { icon: FileText,     color: 'text-rose-500',   bg: 'bg-rose-50',    label: 'PDF' },
@@ -62,52 +62,35 @@ export default function Drive() {
     setLoading(false);
   };
 
-  /* ─── Caricamento su Google Drive via Edge Function ─── */
+  /* ─── Caricamento su Supabase Storage ─── */
   const uploadToDrive = async (file) => {
     setSaving(true);
     setUploadProgress('uploading');
     setUploadError('');
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token ?? SUPABASE_ANON_KEY;
+      const fileName = `${Date.now()}_${file.name}`;
 
-      const fd = new FormData();
-      fd.append('file', file);
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(fileName, file, { upsert: false });
 
-      const resp = await fetch(DRIVE_FUNC_URL, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          apikey: SUPABASE_ANON_KEY,
-        },
-        body: fd,
-      });
+      if (uploadError) throw new Error(uploadError.message);
 
-      const rawText = await resp.text();
-      let result;
-      try {
-        result = JSON.parse(rawText);
-      } catch {
-        throw new Error(`Risposta non-JSON [${resp.status}]: ${rawText.slice(0, 300)}`);
-      }
+      const { data: { publicUrl } } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(fileName);
 
-      if (!resp.ok || result.error) {
-        throw new Error(`[${resp.status}] ${result.error || 'Upload fallito'}`);
-      }
-
-      // Salva metadati in Supabase
       const tipo = detectTipo(file);
-      const { data, error } = await supabase.from('drive').insert([{
-        nome:       result.name,
+      const { data, error: dbError } = await supabase.from('drive').insert([{
+        nome:      file.name,
         tipo,
-        dimensione: formatSize(result.size),
-        link:       result.link,
-        condiviso:  true,
-        drive_id:   result.driveId,
+        dimensione: formatSize(file.size),
+        link:      publicUrl,
+        condiviso: true,
       }]).select().single();
 
-      if (error) throw new Error(error.message);
+      if (dbError) throw new Error(dbError.message);
 
       setFiles(prev => [data, ...prev]);
       setUploadProgress('done');
