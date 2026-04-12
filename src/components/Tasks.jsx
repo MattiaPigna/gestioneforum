@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import {
   Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2,
   Loader2, Pencil, Save, Ban, FolderOpen, ShoppingCart,
-  ArrowLeft, FileText, CheckSquare, Flag, Download,
+  ArrowLeft, FileText, CheckSquare, Flag, Download, MessageSquare, Send,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { sendPush } from '../lib/push';
+import { awardXP, awardBadge, BADGES, getLivello } from '../lib/gamification';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -165,8 +166,32 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 
 // ── TaskPreviewSheet ──────────────────────────────────────────────────────────
 function TaskPreviewSheet({ task, progetti, onClose, onEdit, onDelete, onChangeStato }) {
+  const { socio } = useAuth();
   const p = prioritaConfig[task.priorita] || prioritaConfig.Media;
   const progetto = progetti.find(pr => pr.id === task.progetto_id);
+  const [commenti, setCommenti] = useState([]);
+  const [loadingCommenti, setLoadingCommenti] = useState(true);
+  const [newCommento, setNewCommento] = useState('');
+  const [savingCommento, setSavingCommento] = useState(false);
+
+  useEffect(() => {
+    supabase.from('task_commenti').select('*').eq('task_id', task.id).order('created_at')
+      .then(({ data }) => { if (data) setCommenti(data); setLoadingCommenti(false); });
+  }, [task.id]);
+
+  const handleAddCommento = async () => {
+    if (!newCommento.trim() || !socio) return;
+    setSavingCommento(true);
+    const { data, error } = await supabase.from('task_commenti').insert([{
+      task_id: task.id, socio_id: socio.id, socio_nome: socio.nome, testo: newCommento.trim(),
+    }]).select().single();
+    if (!error && data) {
+      setCommenti(prev => [...prev, data]);
+      setNewCommento('');
+      awardXP(socio.id, 'commento_scritto', 2, task.id);
+    }
+    setSavingCommento(false);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-end" onClick={onClose}>
@@ -220,6 +245,58 @@ function TaskPreviewSheet({ task, progetti, onClose, onEdit, onDelete, onChangeS
               )}
             </div>
           )}
+
+          {/* Commenti */}
+          <div>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <MessageSquare size={12} /> Commenti{commenti.length > 0 && ` (${commenti.length})`}
+            </p>
+            {loadingCommenti ? (
+              <div className="flex items-center gap-2 text-slate-400 text-sm"><Loader2 size={13} className="animate-spin" /> Caricamento...</div>
+            ) : (
+              <div className="space-y-3">
+                {commenti.length === 0 && (
+                  <p className="text-sm text-slate-400 italic text-center py-2">Nessun commento ancora — sii il primo!</p>
+                )}
+                {commenti.map(c => (
+                  <div key={c.id} className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                      <span className="text-white text-[10px] font-bold">{c.socio_nome.split(' ').map(n => n[0]).join('').slice(0, 2)}</span>
+                    </div>
+                    <div className="flex-1 bg-slate-50 rounded-2xl px-4 py-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-slate-700">{c.socio_nome}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {new Date(c.created_at).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-600 leading-relaxed">{c.testo}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {socio && (
+              <div className="flex gap-2 mt-3">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                  <span className="text-white text-[10px] font-bold">{socio.avatar || socio.nome?.slice(0,2)}</span>
+                </div>
+                <div className="flex-1 flex gap-2">
+                  <input
+                    className="flex-1 bg-slate-100 rounded-2xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:bg-white transition-all"
+                    placeholder="Scrivi un commento... (Invio per inviare)"
+                    value={newCommento}
+                    onChange={e => setNewCommento(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleAddCommento())}
+                  />
+                  <button onClick={handleAddCommento} disabled={!newCommento.trim() || savingCommento}
+                    className="w-9 h-9 rounded-full bg-blue-500 hover:bg-blue-600 disabled:opacity-40 text-white flex items-center justify-center transition-colors shrink-0">
+                    {savingCommento ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {onChangeStato && (
             <div>
@@ -877,6 +954,7 @@ export default function Tasks() {
   const [progettoEditId, setProgettoEditId]     = useState(null);
   const [progettoForm, setProgettoForm]         = useState(emptyProgetto);
   const [savingProgetto, setSavingProgetto]     = useState(false);
+  const [xpBurst, setXpBurst]                  = useState(null); // { punti, newBadges[] }
 
   useEffect(() => {
     Promise.all([fetchTasks(), fetchProgetti(), fetchSoci()]);
@@ -944,6 +1022,27 @@ export default function Tasks() {
     const { data, error } = await supabase.from('tasks').update({ stato: nuovoStato }).eq('id', task.id).select().single();
     if (error) { alert('Errore: ' + error.message); return; }
     setTasks(prev => prev.map(t => t.id === task.id ? data : t));
+
+    // ── Gamification: XP quando task completata ──
+    if (nuovoStato === 'Done' && task.assegnatario) {
+      const puntiBase = task.priorita === 'Alta' ? 20 : task.priorita === 'Bassa' ? 5 : 10;
+      const { data: socioRow } = await supabase.from('soci').select('id').eq('nome', task.assegnatario).maybeSingle();
+      if (socioRow?.id) {
+        let puntiTotali = puntiBase;
+        // Bonus fulmine: completata entro 24h dalla creazione
+        if (task.created_at) {
+          const orePassate = (Date.now() - new Date(task.created_at).getTime()) / 3600000;
+          if (orePassate <= 24) {
+            await awardXP(socioRow.id, 'task_24h', 5, task.id);
+            puntiTotali += 5;
+          }
+        }
+        const newBadges = await awardXP(socioRow.id, 'task_completata', puntiBase, task.id);
+        setXpBurst({ punti: puntiTotali, newBadges: newBadges || [] });
+        setTimeout(() => setXpBurst(null), 3000);
+      }
+    }
+
     const e = { 'Done': '✅', 'In Progress': '🔄', 'To Do': '📋', 'Annullata': '❌' };
     sendPush({ title: `${e[nuovoStato] || '📋'} ${task.titolo}`, body: `${task.stato} → ${nuovoStato}`, url: '/' });
   };
@@ -961,6 +1060,26 @@ export default function Tasks() {
       if (error) { alert('Errore: ' + error.message); } else {
         setProgetti(prev => prev.map(p => p.id === progettoEditId ? data : p));
         if (progettoSelezionato?.id === progettoEditId) setProgettoSelezionato(data);
+
+        // ── Gamification: badge quando progetto completato ──
+        const prev = progetti.find(p => p.id === progettoEditId);
+        if (prev?.stato !== 'Completato' && payload.stato === 'Completato' && payload.capo_progetto) {
+          const { data: socioRow } = await supabase.from('soci').select('id').eq('nome', payload.capo_progetto).maybeSingle();
+          if (socioRow?.id) {
+            const newBadges = [];
+            await awardXP(socioRow.id, 'progetto_completato', 50, progettoEditId);
+            if (await awardBadge(socioRow.id, 'capo_progetto')) newBadges.push('capo_progetto');
+            const budgetN = parseFloat(payload.budget) || 0;
+            const spesoN  = parseFloat(payload.speso)  || 0;
+            if (budgetN > 0 && spesoN <= budgetN) {
+              if (await awardBadge(socioRow.id, 'economo')) newBadges.push('economo');
+            }
+            if (newBadges.length > 0) {
+              setXpBurst({ punti: 50, newBadges });
+              setTimeout(() => setXpBurst(null), 3500);
+            }
+          }
+        }
       }
     } else {
       const { data, error } = await supabase.from('progetti').insert([payload]).select().single();
@@ -1043,6 +1162,24 @@ export default function Tasks() {
   return (
     <div className="page">
       {modals}
+
+      {/* XP Burst overlay */}
+      {xpBurst && (
+        <div className="fixed inset-0 pointer-events-none z-[60] flex flex-col items-center justify-center gap-3">
+          <div className="animate-bounce bg-gradient-to-r from-amber-400 to-orange-500 text-white font-extrabold text-2xl px-8 py-4 rounded-2xl shadow-2xl shadow-amber-200 border border-amber-300">
+            +{xpBurst.punti} XP ⚡
+          </div>
+          {(xpBurst.newBadges || []).map(badgeId => (
+            <div key={badgeId} className="bg-white border-2 border-amber-200 text-slate-800 font-bold text-base px-6 py-3 rounded-2xl shadow-xl flex items-center gap-2">
+              <span className="text-2xl">{BADGES[badgeId]?.emoji}</span>
+              <div>
+                <p className="text-xs text-amber-600 font-bold uppercase tracking-wide">Badge sbloccato!</p>
+                <p className="text-sm">{BADGES[badgeId]?.nome}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Header */}
       <div className="page-header">

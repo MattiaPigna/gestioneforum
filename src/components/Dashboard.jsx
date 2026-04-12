@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Users, CheckSquare, Vote, TrendingUp, Calendar, Bell, Clock, Loader2, ArrowUpRight, FolderOpen, AlertCircle } from 'lucide-react';
+import { Users, CheckSquare, Vote, TrendingUp, Calendar, Bell, Clock, Loader2, ArrowUpRight, FolderOpen, AlertCircle, Trophy } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { getLivello } from '../lib/gamification';
 
 const statoColor = {
   'To Do':       'bg-slate-100 text-slate-600',
@@ -21,8 +22,8 @@ const tipoColor = {
 };
 
 export default function Dashboard({ onNavigate }) {
-  const [data, setData]     = useState({ soci: [], tasks: [], proposte: [], eventi: [], progetti: [], taskScadenze: [] });
-  const [loading, setLoading] = useState(true);
+  const [data, setData]         = useState({ soci: [], tasks: [], proposte: [], eventi: [], progetti: [], taskScadenze: [], leaderboard: [] });
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -34,17 +35,30 @@ export default function Dashboard({ onNavigate }) {
         { data: eventi },
         { data: progetti },
         { data: taskScadenze },
+        { data: xpLog },
       ] = await Promise.all([
-        supabase.from('soci').select('id'),
+        supabase.from('soci').select('id, nome, avatar, ruolo'),
         supabase.from('tasks').select('id, titolo, assegnatario, priorita, stato, scadenza').order('created_at', { ascending: false }).limit(4),
         supabase.from('proposte').select('id, titolo, autore, upvotes, downvotes').order('upvotes', { ascending: false }).limit(3),
         supabase.from('eventi').select('id, titolo, data, ora, tipo').gte('data', oggi).order('data').limit(4),
         supabase.from('progetti').select('id, nome, stato').eq('stato', 'Attivo'),
         supabase.from('tasks').select('id, titolo, scadenza, priorita').gte('scadenza', oggi).neq('stato', 'Done').neq('stato', 'Annullata').order('scadenza').limit(10),
+        supabase.from('xp_log').select('socio_id, punti'),
       ]);
+
+      // Build leaderboard
+      const xpBySocio = (xpLog || []).reduce((acc, r) => {
+        acc[r.socio_id] = (acc[r.socio_id] || 0) + r.punti; return acc;
+      }, {});
+      const leaderboard = (soci || [])
+        .map(s => ({ ...s, xp: xpBySocio[s.id] || 0 }))
+        .filter(s => s.xp > 0)
+        .sort((a, b) => b.xp - a.xp)
+        .slice(0, 5);
+
       setData({
         soci: soci || [], tasks: tasks || [], proposte: proposte || [],
-        eventi: eventi || [], progetti: progetti || [], taskScadenze: taskScadenze || [],
+        eventi: eventi || [], progetti: progetti || [], taskScadenze: taskScadenze || [], leaderboard,
       });
       setLoading(false);
     };
@@ -58,7 +72,7 @@ export default function Dashboard({ onNavigate }) {
     </div>
   );
 
-  const { soci, tasks, proposte, eventi, progetti, taskScadenze } = data;
+  const { soci, tasks, proposte, eventi, progetti, taskScadenze, leaderboard } = data;
   const oggi_str       = new Date().toISOString().split('T')[0];
   const taskAperti     = tasks.filter(t => t.stato !== 'Done').length;
   const taskCompletati = tasks.filter(t => t.stato === 'Done').length;
@@ -296,6 +310,48 @@ export default function Dashboard({ onNavigate }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Classifica XP */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-slate-50">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-xl bg-amber-100 flex items-center justify-center">
+              <Trophy size={14} className="text-amber-500" />
+            </div>
+            <h3 className="font-bold text-slate-800 text-sm">Classifica XP</h3>
+          </div>
+          <button onClick={() => onNavigate('soci')} className="text-xs text-blue-500 hover:text-blue-600 font-semibold flex items-center gap-1">
+            Vedi soci <ArrowUpRight size={11} />
+          </button>
+        </div>
+        {leaderboard.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 text-slate-400 px-5 gap-2">
+            <Trophy size={28} className="opacity-20" />
+            <p className="text-sm font-medium">Nessun XP guadagnato ancora</p>
+            <p className="text-xs text-center">Completa task per scalare la classifica!</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-50">
+            {leaderboard.map((s, i) => {
+              const lv = getLivello(s.xp);
+              const medals = ['🥇', '🥈', '🥉'];
+              return (
+                <div key={s.id} className={`flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/60 transition-colors ${i === 0 ? 'bg-amber-50/40' : ''}`}>
+                  <span className="text-xl w-7 text-center shrink-0">{medals[i] || <span className="text-sm font-bold text-slate-400">{i + 1}</span>}</span>
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center shrink-0">
+                    <span className="text-white text-xs font-bold">{s.avatar}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{s.nome}</p>
+                    <p className="text-[11px] text-slate-400">{lv.emoji} {lv.nome}</p>
+                  </div>
+                  <span className={`text-sm font-extrabold ${i === 0 ? 'text-amber-600' : 'text-slate-600'}`}>{s.xp} XP</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Proposte in evidenza */}

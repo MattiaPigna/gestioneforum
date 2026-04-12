@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Mail, Calendar, Shield, ChevronUp, ChevronDown, Plus, X, Trash2, Loader2, Download, FileText, Pencil, ArrowLeft, CheckCircle2, Clock, Circle, AlertCircle } from 'lucide-react';
+import { Search, Mail, Calendar, Shield, ChevronUp, ChevronDown, Plus, X, Trash2, Loader2, Download, FileText, Pencil, ArrowLeft, CheckCircle2, Clock, Circle, AlertCircle, Star } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { exportSociCSV, exportSociPDF } from '../utils/export';
+import { getLivello, getProgressoLivello, BADGES } from '../lib/gamification';
 
 const colorMap = {
   slate:   'bg-slate-100 text-slate-700',
@@ -34,8 +35,10 @@ function SocioDetail({ socio, getRuoloColor, onClose, onEdit, canEdit }) {
   const [tasks, setTasks] = useState([]);
   const [loadingTasks, setLoadingTasks] = useState(true);
   const [filtroStato, setFiltroStato] = useState('tutti');
+  const [xpTotale, setXpTotale] = useState(0);
+  const [badges, setBadges] = useState([]);
 
-  useEffect(() => { fetchTasks(); }, [socio.id]);
+  useEffect(() => { fetchTasks(); fetchGamification(); }, [socio.id]);
 
   const fetchTasks = async () => {
     setLoadingTasks(true);
@@ -46,6 +49,15 @@ function SocioDetail({ socio, getRuoloColor, onClose, onEdit, canEdit }) {
       .order('created_at', { ascending: false });
     if (data) setTasks(data);
     setLoadingTasks(false);
+  };
+
+  const fetchGamification = async () => {
+    const [{ data: xpRows }, { data: badgeRows }] = await Promise.all([
+      supabase.from('xp_log').select('punti').eq('socio_id', socio.id),
+      supabase.from('badge_sbloccati').select('badge_id, sbloccato_at').eq('socio_id', socio.id).order('sbloccato_at'),
+    ]);
+    setXpTotale((xpRows || []).reduce((s, r) => s + r.punti, 0));
+    setBadges(badgeRows || []);
   };
 
   const completate  = tasks.filter(t => t.stato === 'done');
@@ -73,7 +85,12 @@ function SocioDetail({ socio, getRuoloColor, onClose, onEdit, canEdit }) {
               <span className="text-white text-2xl font-bold">{socio.avatar}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold leading-tight">{socio.nome}</h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-bold leading-tight">{socio.nome}</h2>
+                {(() => { const lv = getLivello(xpTotale); return (
+                  <span className="text-xs font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">{lv.emoji} {lv.nome}</span>
+                ); })()}
+              </div>
               <span className="text-white/80 text-sm">{socio.ruolo}</span>
               {socio.email && (
                 <a href={`mailto:${socio.email}`}
@@ -84,18 +101,23 @@ function SocioDetail({ socio, getRuoloColor, onClose, onEdit, canEdit }) {
             </div>
           </div>
 
-          {/* Progress bar */}
-          {tasks.length > 0 && (
-            <div className="mt-4">
-              <div className="flex justify-between text-xs text-white/70 mb-1">
-                <span>Completamento task</span>
-                <span>{percCompl}%</span>
+          {/* XP Progress bar */}
+          {(() => {
+            const lv = getLivello(xpTotale);
+            const perc = getProgressoLivello(xpTotale);
+            const nextLv = lv.max === Infinity ? null : lv.max + 1;
+            return (
+              <div className="mt-4">
+                <div className="flex justify-between text-xs text-white/70 mb-1">
+                  <span>{xpTotale} XP totali</span>
+                  <span>{nextLv ? `${nextLv - xpTotale} XP al prossimo livello` : 'Livello massimo!'}</span>
+                </div>
+                <div className="h-2 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${perc}%` }} />
+                </div>
               </div>
-              <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full transition-all duration-500" style={{ width: `${percCompl}%` }} />
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Scrollable body */}
@@ -114,6 +136,33 @@ function SocioDetail({ socio, getRuoloColor, onClose, onEdit, canEdit }) {
                 <p className="text-xs text-slate-500 mt-0.5 leading-tight">{k.label}</p>
               </div>
             ))}
+          </div>
+
+          {/* Badge */}
+          <div>
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <Star size={12} /> Badge sbloccati
+              <span className="text-xs bg-slate-100 text-slate-500 font-bold px-1.5 rounded-full">{badges.length}</span>
+            </h3>
+            {badges.length === 0 ? (
+              <p className="text-sm text-slate-400 italic">Nessun badge ancora — completa task per sbloccarli!</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {badges.map(b => {
+                  const bd = BADGES[b.badge_id];
+                  if (!bd) return null;
+                  return (
+                    <div key={b.badge_id} className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
+                      <span className="text-2xl">{bd.emoji}</span>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-slate-700 leading-tight">{bd.nome}</p>
+                        <p className="text-[10px] text-slate-400 leading-tight mt-0.5">{bd.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Info socio */}
