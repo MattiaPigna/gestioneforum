@@ -113,7 +113,7 @@ serve(async (req) => {
     uploadBody.append('file', file)
 
     const uploadResp = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size,mimeType',
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size,mimeType&supportsAllDrives=true',
       {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -127,7 +127,7 @@ serve(async (req) => {
     }
 
     // Rendi il file leggibile da chiunque abbia il link
-    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`, {
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions?supportsAllDrives=true`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ role: 'reader', type: 'anyone' }),
