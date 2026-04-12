@@ -28,6 +28,10 @@ ALTER TABLE public.finanze
   ADD COLUMN IF NOT EXISTS progetto_id uuid
   REFERENCES public.progetti(id) ON DELETE SET NULL;
 
+-- 4. Aggiungi milestones JSONB alla tabella progetti
+ALTER TABLE public.progetti
+  ADD COLUMN IF NOT EXISTS milestones jsonb DEFAULT '[]'::jsonb; -- [{id, titolo, data, completata}]
+
 -- 3. RLS: abilita e replica le policy già esistenti su tasks
 ALTER TABLE public.progetti ENABLE ROW LEVEL SECURITY;
 

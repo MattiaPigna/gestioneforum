@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import {
   Plus, X, CheckCircle, Circle, Clock, AlertCircle, Trash2,
   Loader2, Pencil, Save, Ban, FolderOpen, ShoppingCart,
-  ArrowLeft, FileText, CheckSquare,
+  ArrowLeft, FileText, CheckSquare, Flag, Download,
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { sendPush } from '../lib/push';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // ── Configs ───────────────────────────────────────────────────────────────────
 const prioritaConfig = {
@@ -40,6 +42,124 @@ const statoBtns = [
 
 const emptyTask     = { titolo: '', descrizione: '', priorita: 'Media', stato: 'To Do', assegnatario: '', scadenza: '', progetto_id: '' };
 const emptyProgetto = { nome: '', descrizione: '', budget: '', speso: '', capo_progetto: '', stato: 'Attivo', note: '', scadenza: '' };
+
+// ── PDF Export ────────────────────────────────────────────────────────────────
+function exportProgettoPDF(progetto, tasks) {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const tasksProg = tasks.filter(t => t.progetto_id === progetto.id);
+  const done = tasksProg.filter(t => t.stato === 'Done').length;
+  const cfg = progettoStatoConfig[progetto.stato] || progettoStatoConfig['Attivo'];
+  const budgetNum = parseFloat(progetto.budget) || 0;
+  const spesoNum = parseFloat(progetto.speso) || 0;
+  const acquisti = progetto.acquisti || [];
+  const milestones = progetto.milestones || [];
+  const pageW = doc.internal.pageSize.getWidth();
+
+  // ── Header ──
+  doc.setFillColor(59, 130, 246); // blue-500
+  doc.rect(0, 0, pageW, 28, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text(progetto.nome, 14, 12);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Stato: ${progetto.stato}${progetto.capo_progetto ? '   |   Capo progetto: ' + progetto.capo_progetto : ''}${progetto.scadenza ? '   |   Scadenza: ' + progetto.scadenza : ''}`, 14, 22);
+
+  let y = 36;
+
+  // ── Descrizione ──
+  if (progetto.descrizione) {
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const lines = doc.splitTextToSize(progetto.descrizione, pageW - 28);
+    doc.text(lines, 14, y);
+    y += lines.length * 5 + 6;
+  }
+
+  // ── KPI table ──
+  const kpiRows = [
+    ['Task totali', tasksProg.length, 'Completate', done, 'Avanzamento', tasksProg.length ? `${Math.round((done / tasksProg.length) * 100)}%` : '—'],
+  ];
+  if (budgetNum > 0) kpiRows.push(['Budget', `€ ${budgetNum.toLocaleString('it-IT')}`, 'Speso', `€ ${spesoNum.toLocaleString('it-IT')}`, 'Rimanente', `€ ${(budgetNum - spesoNum).toLocaleString('it-IT')}`]);
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Task totali', 'Completate', 'Avanzamento', ...(budgetNum > 0 ? ['Budget', 'Speso', 'Rimanente'] : [])]],
+    body: [[tasksProg.length, done, tasksProg.length ? `${Math.round((done / tasksProg.length) * 100)}%` : '—', ...(budgetNum > 0 ? [`€ ${budgetNum.toLocaleString('it-IT')}`, `€ ${spesoNum.toLocaleString('it-IT')}`, `€ ${(budgetNum - spesoNum).toLocaleString('it-IT')}`] : [])]],
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+    theme: 'grid',
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Milestones ──
+  if (milestones.length > 0) {
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+    doc.text('Milestone', 14, y); y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Titolo', 'Data', 'Stato']],
+      body: milestones.map(m => [m.titolo, m.data || '—', m.completata ? 'Completata ✓' : 'In attesa']),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+      theme: 'striped',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Tasks ──
+  if (tasksProg.length > 0) {
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+    doc.text('Task del Progetto', 14, y); y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Titolo', 'Stato', 'Priorità', 'Assegnatario', 'Scadenza']],
+      body: tasksProg.map(t => [t.titolo, t.stato, t.priorita, t.assegnatario || '—', t.scadenza || '—']),
+      styles: { fontSize: 8.5, cellPadding: 2.5 },
+      headStyles: { fillColor: [20, 184, 166], textColor: 255, fontStyle: 'bold' },
+      theme: 'striped',
+      columnStyles: { 0: { cellWidth: 60 } },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Acquisti ──
+  if (acquisti.length > 0) {
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+    doc.text('Cose da acquistare', 14, y); y += 6;
+    autoTable(doc, {
+      startY: y,
+      head: [['Articolo', 'Stato']],
+      body: acquisti.map(a => [a.testo, a.fatto ? 'Acquistato ✓' : 'Da acquistare']),
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { fillColor: [245, 158, 11], textColor: 255, fontStyle: 'bold' },
+      theme: 'striped',
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Note ──
+  if (progetto.note) {
+    if (y > 240) { doc.addPage(); y = 20; }
+    doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 41, 59);
+    doc.text('Note', 14, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
+    const noteLines = doc.splitTextToSize(progetto.note, pageW - 28);
+    doc.text(noteLines, 14, y);
+  }
+
+  // ── Footer ──
+  const pages = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+    doc.text(`Generato il ${new Date().toLocaleDateString('it-IT')} · Pagina ${i} di ${pages}`, pageW / 2, 290, { align: 'center' });
+  }
+
+  doc.save(`${progetto.nome.replace(/\s+/g, '_')}_progetto.pdf`);
+}
 
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -410,9 +530,11 @@ function ProgettoCard({ progetto, tasks, onSelect, onEdit, onDelete, canEdit }) 
 }
 
 // ── ProgettoDetail ────────────────────────────────────────────────────────────
-function ProgettoDetail({ progetto, tasks, soci, onBack, onEdit, onDelete, onAcquistiChange, onTaskAdd, onTaskEdit, onTaskDelete, onTaskChangeStato, canEdit }) {
+function ProgettoDetail({ progetto, tasks, soci, onBack, onEdit, onDelete, onAcquistiChange, onMilestonesChange, onTaskAdd, onTaskEdit, onTaskDelete, onTaskChangeStato, canEdit }) {
   const [newAcquisto, setNewAcquisto] = useState('');
+  const [newMilestone, setNewMilestone] = useState({ titolo: '', data: '' });
   const tasksProg = tasks.filter(t => t.progetto_id === progetto.id);
+  const milestones = progetto.milestones || [];
   const done = tasksProg.filter(t => t.stato === 'Done').length;
   const cfg = progettoStatoConfig[progetto.stato] || progettoStatoConfig['Attivo'];
   const acquisti = progetto.acquisti || [];
@@ -435,6 +557,31 @@ function ProgettoDetail({ progetto, tasks, soci, onBack, onEdit, onDelete, onAcq
     onAcquistiChange(progetto.id, acquisti.filter(a => a.id !== id));
   };
 
+  const toggleMilestone = (id) => {
+    if (!canEdit) return;
+    onMilestonesChange(progetto.id, milestones.map(m => m.id === id ? { ...m, completata: !m.completata } : m));
+  };
+
+  const addMilestone = () => {
+    if (!newMilestone.titolo.trim()) return;
+    onMilestonesChange(progetto.id, [...milestones, { id: uid(), titolo: newMilestone.titolo.trim(), data: newMilestone.data, completata: false }]);
+    setNewMilestone({ titolo: '', data: '' });
+  };
+
+  const removeMilestone = (id) => {
+    onMilestonesChange(progetto.id, milestones.filter(m => m.id !== id));
+  };
+
+  // Milestones ordinate per data
+  const milestonesSorted = [...milestones].sort((a, b) => {
+    if (!a.data && !b.data) return 0;
+    if (!a.data) return 1;
+    if (!b.data) return -1;
+    return a.data.localeCompare(b.data);
+  });
+
+  const oggi = new Date().toISOString().split('T')[0];
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -449,18 +596,25 @@ function ProgettoDetail({ progetto, tasks, soci, onBack, onEdit, onDelete, onAcq
           </span>
           <h2 className="text-xl font-extrabold text-slate-800 leading-tight truncate">{progetto.nome}</h2>
         </div>
-        {canEdit && (
-          <div className="flex gap-1 shrink-0">
-            <button onClick={() => onEdit(progetto)}
-              className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors shadow-sm">
-              <Pencil size={15} />
-            </button>
-            <button onClick={() => onDelete(progetto.id)}
-              className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-500 transition-colors shadow-sm">
-              <Trash2 size={15} />
-            </button>
-          </div>
-        )}
+        <div className="flex gap-1 shrink-0">
+          <button onClick={() => exportProgettoPDF(progetto, tasks)}
+            title="Esporta PDF"
+            className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-teal-50 hover:text-teal-600 transition-colors shadow-sm">
+            <Download size={15} />
+          </button>
+          {canEdit && (
+            <>
+              <button onClick={() => onEdit(progetto)}
+                className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors shadow-sm">
+                <Pencil size={15} />
+              </button>
+              <button onClick={() => onDelete(progetto.id)}
+                className="w-9 h-9 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-500 hover:bg-rose-50 hover:text-rose-500 transition-colors shadow-sm">
+                <Trash2 size={15} />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* KPI cards */}
@@ -573,6 +727,77 @@ function ProgettoDetail({ progetto, tasks, soci, onBack, onEdit, onDelete, onAcq
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Milestone */}
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-50">
+          <p className="text-sm font-bold text-slate-700 flex items-center gap-2">
+            <Flag size={15} className="text-violet-500" /> Milestone
+            {milestones.length > 0 && (
+              <span className="text-xs text-violet-600 font-bold bg-violet-50 px-2 py-0.5 rounded-full">
+                {milestones.filter(m => m.completata).length}/{milestones.length}
+              </span>
+            )}
+          </p>
+        </div>
+        <div className="p-4">
+          {milestonesSorted.length === 0 && <p className="text-xs text-slate-400 text-center py-2">Nessuna milestone</p>}
+          <div className="relative">
+            {milestonesSorted.length > 0 && (
+              <div className="absolute left-[9px] top-2 bottom-2 w-px bg-slate-200" />
+            )}
+            <div className="space-y-3">
+              {milestonesSorted.map(m => {
+                const isScaduta = m.data && m.data < oggi && !m.completata;
+                const isOggi = m.data === oggi;
+                return (
+                  <div key={m.id} className="flex items-start gap-3 group">
+                    <button onClick={() => toggleMilestone(m.id)} disabled={!canEdit}
+                      className={`relative z-10 w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all
+                        ${m.completata ? 'bg-violet-500 border-violet-500' : isScaduta ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-white hover:border-violet-400'}`}>
+                      {m.completata && <CheckCircle size={10} className="text-white" strokeWidth={3} />}
+                      {!m.completata && isScaduta && <span className="w-2 h-2 rounded-full bg-rose-400" />}
+                    </button>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold leading-snug ${m.completata ? 'line-through text-slate-400' : 'text-slate-700'}`}>{m.titolo}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {m.data && (
+                          <span className={`text-xs flex items-center gap-1 font-medium
+                            ${m.completata ? 'text-slate-400' : isScaduta ? 'text-rose-500' : isOggi ? 'text-amber-600' : 'text-slate-400'}`}>
+                            <Clock size={10} />
+                            {m.data}
+                            {isOggi && !m.completata && <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 rounded-full ml-1">Oggi!</span>}
+                            {isScaduta && <span className="text-[9px] font-bold bg-rose-100 text-rose-600 px-1.5 rounded-full ml-1">Scaduta</span>}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {canEdit && (
+                      <button onClick={() => removeMilestone(m.id)}
+                        className="opacity-0 group-hover:opacity-100 text-slate-300 hover:text-rose-500 transition-all p-0.5 shrink-0">
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {canEdit && (
+            <div className="flex gap-2 pt-3 mt-2 border-t border-slate-50">
+              <input className="form-input flex-1 text-sm py-2" placeholder="Titolo milestone..."
+                value={newMilestone.titolo} onChange={e => setNewMilestone(m => ({ ...m, titolo: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && addMilestone()} />
+              <input type="date" className="form-input text-sm py-2 w-36 shrink-0"
+                value={newMilestone.data} onChange={e => setNewMilestone(m => ({ ...m, data: e.target.value }))} />
+              <button onClick={addMilestone}
+                className="w-9 h-9 rounded-xl bg-violet-500 hover:bg-violet-600 text-white flex items-center justify-center transition-colors shrink-0 shadow-md shadow-violet-200">
+                <Plus size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -760,6 +985,14 @@ export default function Tasks() {
     }
   };
 
+  const handleMilestonesChange = async (progettoId, milestones) => {
+    const { data, error } = await supabase.from('progetti').update({ milestones }).eq('id', progettoId).select().single();
+    if (!error && data) {
+      setProgetti(prev => prev.map(p => p.id === progettoId ? data : p));
+      if (progettoSelezionato?.id === progettoId) setProgettoSelezionato(data);
+    }
+  };
+
   const filteredTasks = tasks.filter(t => {
     if (progettoFiltro === '') return true;
     if (progettoFiltro === 'generale') return !t.progetto_id;
@@ -798,6 +1031,7 @@ export default function Tasks() {
           onEdit={openEditProgetto}
           onDelete={(id) => { handleDeleteProgetto(id); setProgettoSelezionato(null); }}
           onAcquistiChange={handleAcquistiChange}
+          onMilestonesChange={handleMilestonesChange}
           onTaskAdd={openAddTask} onTaskEdit={openEditTask}
           onTaskDelete={handleDeleteTask} onTaskChangeStato={handleChangeStato}
           canEdit={canEdit()} />
