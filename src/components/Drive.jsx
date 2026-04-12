@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Sheet, Folder, Presentation, ExternalLink, Search, Filter, Plus, X, Loader2, Trash2, Link, Upload, CloudUpload, CheckCircle2, AlertCircle } from 'lucide-react';
-import { supabase, SUPABASE_URL } from '../lib/supabase';
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from '../lib/supabase';
 
 const DRIVE_FUNC_URL = `${SUPABASE_URL}/functions/v1/upload-drive`;
 
@@ -77,7 +77,10 @@ export default function Drive() {
 
       const resp = await fetch(DRIVE_FUNC_URL, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          apikey: SUPABASE_ANON_KEY,
+        },
         body: fd,
       });
 
