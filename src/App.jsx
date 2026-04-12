@@ -111,6 +111,14 @@ function AppInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   useScadenzaCheck();
+
+  // navigate: cambia sezione E forza il remount del componente → dati sempre freschi
+  const navigate = useCallback((section) => {
+    setActiveSection(section);
+    setRefreshKey(k => k + 1);
+    setSidebarOpen(false);
+  }, []);
+
   const doRefresh = useCallback(() => new Promise(r => { setRefreshKey(k => k + 1); setTimeout(r, 600); }), []);
   const { mainRef, pulling, refreshing } = usePullToRefresh(doRefresh);
 
@@ -133,7 +141,7 @@ function AppInner() {
   const renderSection = () => {
     const k = refreshKey;
     switch (activeSection) {
-      case 'dashboard':   return <Dashboard key={k} onNavigate={setActiveSection} />;
+      case 'dashboard':   return <Dashboard key={k} onNavigate={navigate} />;
       case 'calendario':  return <Calendario key={k} />;
       case 'tasks':       return <Tasks key={k} />;
       case 'proposte':    return <Proposte key={k} />;
@@ -142,8 +150,8 @@ function AppInner() {
       case 'finanze':     return <Finanze key={k} />;
       case 'statistiche': return <Statistiche key={k} />;
       case 'profilo':     return <Profilo key={k} />;
-      case 'ruoli':       return isPresidente() ? <GestioneRuoli key={k} /> : <Dashboard key={k} onNavigate={setActiveSection} />;
-      default:            return <Dashboard key={k} onNavigate={setActiveSection} />;
+      case 'ruoli':       return isPresidente() ? <GestioneRuoli key={k} /> : <Dashboard key={k} onNavigate={navigate} />;
+      default:            return <Dashboard key={k} onNavigate={navigate} />;
     }
   };
 
@@ -151,7 +159,7 @@ function AppInner() {
     <div className="flex h-screen overflow-hidden" style={{ background: 'linear-gradient(135deg,#f0f4ff 0%,#e8f5f0 100%)' }}>
       <Sidebar
         activeSection={activeSection}
-        onNavigate={setActiveSection}
+        onNavigate={navigate}
         isOpen={sidebarOpen}
         onToggle={() => setSidebarOpen(p => !p)}
       />
@@ -190,9 +198,17 @@ function AppInner() {
               Online
             </div>
 
+            {/* Tasto aggiorna — sempre visibile */}
+            <button
+              onClick={doRefresh}
+              title="Aggiorna pagina"
+              className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-500 hover:bg-blue-50 hover:border-blue-100 transition-all active:scale-95">
+              <RefreshCw size={14} className={refreshing ? 'animate-spin text-blue-500' : ''} />
+            </button>
+
             {/* Avatar + nome utente */}
             <div className="hidden sm:flex items-center gap-2 bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-xl cursor-pointer hover:bg-blue-50 hover:border-blue-100 transition-colors"
-              onClick={() => setActiveSection('profilo')}>
+              onClick={() => navigate('profilo')}>
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
                 <span className="text-white text-[10px] font-bold">{socio?.avatar || '?'}</span>
               </div>
