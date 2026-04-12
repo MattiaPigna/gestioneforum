@@ -70,7 +70,7 @@ export default function Drive() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
       const fd = new FormData();
       fd.append('file', file);
