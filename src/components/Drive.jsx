@@ -84,10 +84,16 @@ export default function Drive() {
         body: fd,
       });
 
-      const result = await resp.json();
+      const rawText = await resp.text();
+      let result;
+      try {
+        result = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Risposta non-JSON [${resp.status}]: ${rawText.slice(0, 300)}`);
+      }
 
       if (!resp.ok || result.error) {
-        throw new Error(result.error || 'Upload fallito');
+        throw new Error(`[${resp.status}] ${result.error || 'Upload fallito'}`);
       }
 
       // Salva metadati in Supabase
