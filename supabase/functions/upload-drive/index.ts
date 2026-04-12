@@ -64,23 +64,41 @@ async function getAccessToken(sa: any): Promise<string> {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  console.log('[upload-drive] richiesta ricevuta:', req.method)
+
   try {
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT')
     const folderId           = Deno.env.get('GOOGLE_DRIVE_FOLDER_ID')
 
+    console.log('[upload-drive] SA configurato:', !!serviceAccountJson)
+    console.log('[upload-drive] Folder ID configurato:', !!folderId)
+
     if (!serviceAccountJson || !folderId) {
       return new Response(
-        JSON.stringify({ error: 'Variabili GOOGLE_SERVICE_ACCOUNT e GOOGLE_DRIVE_FOLDER_ID non configurate in Supabase Secrets' }),
+        JSON.stringify({ error: 'Secrets mancanti: configura GOOGLE_SERVICE_ACCOUNT e GOOGLE_DRIVE_FOLDER_ID in Supabase' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       )
     }
 
-    const sa = JSON.parse(serviceAccountJson)
+    let sa: any
+    try {
+      sa = JSON.parse(serviceAccountJson)
+      console.log('[upload-drive] SA email:', sa.client_email)
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: 'GOOGLE_SERVICE_ACCOUNT non è un JSON valido: ' + e.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    console.log('[upload-drive] generazione access token...')
     const accessToken = await getAccessToken(sa)
+    console.log('[upload-drive] token ottenuto:', !!accessToken)
 
     // Ricevi il file via multipart
     const formData = await req.formData()
     const file = formData.get('file') as File
+    console.log('[upload-drive] file ricevuto:', file?.name, file?.size)
     if (!file) {
       return new Response(
         JSON.stringify({ error: 'Nessun file trovato nella richiesta' }),
